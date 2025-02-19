@@ -5,19 +5,19 @@ import React from 'react'
 
 const Footer = () => {
   return (
-    <footer className="flexCenter mb-24">
-      <div className="padding-container max-container flex w-full flex-col gap-14">
-        <div className="flex flex-col items-start justify-center gap-[10%] md:flex-row">
+    <footer className="flexCenter mb-24 bg-[#E3F2FD] py-24 text-[#2C3E50]">
+      <div className="padding-container max-container flex w-full flex-col gap-14 ">
+        <div className="flex flex-col items-start justify-center gap-[10%] md:flex-row ">
           <Link href="/" className="mb-10">
             <Image src="/logos/logo-light.svg" alt="logo" width={74} height={29}/>
           </Link>
 
           <div className='flex flex-wrap gap-10 sm:justify-between md:flex-1'>
             {FOOTER_LINKS.map((columns) => (
-              <FooterColumn title={columns.title}>
-                <ul className="regular-14 flex flex-col gap-4 text-gray-30">
+              <FooterColumn title={columns.title} key={columns.title}>
+                <ul className="regular-14 flex flex-col gap-4 text-[#2C3E50]">
                   {columns.links.map((link) => (
-                    <Link href="/" key={link}>
+                    <Link href="/" key={link} className="hover:text-[#FFD166] transition-colors">
                       {link}
                     </Link>
                   ))}
@@ -33,10 +33,8 @@ const Footer = () => {
                     key={link.label}
                     className="flex gap-4 md:flex-col lg:flex-row"
                   >
-                    <p className="whitespace-nowrap">
-                      {link.label}:
-                    </p>
-                    <p className="medium-14 whitespace-nowrap text-blue-70">
+                    <p className="whitespace-nowrap">{link.label}:</p>
+                    <p className="medium-14 whitespace-nowrap text-[#6FCF97]">
                       {link.value}
                     </p>
                   </Link>
@@ -46,10 +44,10 @@ const Footer = () => {
 
             <div className="flex flex-col gap-5">
               <FooterColumn title={SOCIALS.title}>
-                <ul className="regular-14 flex gap-4 text-gray-30">
+                <ul className="regular-14 flex gap-4 text-[#2C3E50]">
                   {SOCIALS.links.map((link) => (
                     <Link href="/" key={link}>
-                      <Image src={link} alt="logo" width={24} height={24} />
+                      <Image src={link} alt="logo" width={24} height={24} className="hover:opacity-80 transition-opacity" />
                     </Link>
                   ))}
                 </ul>
@@ -58,8 +56,8 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border bg-gray-20" />
-        <p className="regular-14 w-full text-center text-gray-30">2025 Deadworld | All rights reserved</p>
+        <div className="border bg-[#FFD166]" />
+        <p className="regular-14 w-full text-center text-[#2C3E50]">2025 Deadworld | All rights reserved</p>
       </div>
     </footer>
   )
@@ -73,7 +71,7 @@ type FooterColumnProps = {
 const FooterColumn = ({ title, children }: FooterColumnProps) => {
   return (
     <div className="flex flex-col gap-5">
-      <h4 className="bold-18 whitespace-nowrap">{title}</h4>
+      <h4 className="bold-18 whitespace-nowrap text-[#2C3E50]">{title}</h4>
       {children}
     </div>
   )

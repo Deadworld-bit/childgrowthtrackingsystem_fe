@@ -23,7 +23,7 @@ const Navbar = () => {
       </ul>
 
       <div className="lg:flexCenter hidden">
-        <Link href="/Signin">
+        <Link href="/SignIn">
           <Button
             type="button"
             title="Login"
