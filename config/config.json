@@ -1,0 +1,52 @@
+{
+  "site": {
+    "title": "Commerceplate",
+    "base_url": "https://tf-commerceplate.netlify.app/",
+    "base_path": "/",
+    "trailing_slash": false,
+    "favicon": "/images/favicon.png",
+    "logo": "/images/logo.png",
+    "logo_darkmode": "/images/logo-darkmode.png",
+    "logo_width": "150",
+    "logo_height": "27",
+    "logo_text": "Commerceplate"
+  },
+
+  "params": {
+    "contact_form_action": "#",
+    "copyright": "Designed And Developed by Deadworld"
+  },
+
+  "navigation_button": {
+    "enable": false,
+    "label": "Get Started",
+    "link": "https://github.com/Deadworld-bit/childgrowthtrackingsystem_fe"
+  },
+
+  "settings": {
+    "search": true,
+    "account": true,
+    "sticky_header": true,
+    "theme_switcher": true,
+    "default_theme": "system",
+    "pagination_card": 9,
+    "pagination_list": 4,
+    "summary_length": 200,
+    "blog_folder": "blog"
+  },
+
+  "metadata": {
+    "meta_author": "Deadworld",
+    "meta_image": "/images/og-image.png",
+    "meta_description": "Deadworld is me"
+  },
+
+  "childcare": {
+    "currencySymbol": "đ",
+    "currencyCode": "VND",
+    "collections": {
+      "hero_slider": "hidden-homepage-carousel",
+      "featured_products": "featured-products"
+    }
+  }
+}
