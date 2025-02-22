@@ -1,28 +1,27 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-import './globals.css'
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+const inter = Inter({
+    variable: "--font-inter",
+    subsets: ["latin"],
+    display: "swap",
+    axes: ["opsz"],
+});
 
 export const metadata: Metadata = {
-  title: 'Growth Child Tracking System',
-  description: 'UI/UX Design for Growth Child Tracking System',
-}
+    title: "Modern Design Tool Landing Page",
+    description: "Created with the help of Frontend Tribe",
+};
 
 export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="en">
-      <body>
-        <Navbar />
-        <main className="relative overflow-hidden">
-          {children}
-        </main>
-        <Footer />
-      </body>
-    </html>
-  )
+    children,
+}: Readonly<{
+    children: React.ReactNode;
+}>) {
+    return (
+        <html lang="en">
+            <body className={`${inter.variable} font-sans antialiased bg-neutral-950 text-white`}>{children}</body>
+        </html>
+    );
 }

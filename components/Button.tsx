@@ -1,23 +1,26 @@
-import Image from "next/image";
+import { ButtonHTMLAttributes } from "react";
+import { cva } from "class-variance-authority";
 
-type ButtonProps = {
-  type: 'button' | 'submit';
-  title: string;
-  icon?: string;
-  variant: string;
-  full?: boolean;
+const classes = cva("border border-white h1-12 rounded-full px-6 font-medium", {
+    variants: {
+        variant: {
+            primary: "bg-lime-400 text-neutral-950 border-lime-400",
+            secondary: "border-white text-white bg-transparent",
+        },
+        size: {
+            sm: "h-10",
+        },
+    },
+});
+
+export default function Button(
+    props: {
+        variant: "primary" | "secondary";
+        size?: "sm";
+    } & ButtonHTMLAttributes<HTMLButtonElement>
+) {
+    const { variant, className, size, ...otherProps } = props;
+    return (
+        <button className={classes({ variant, className, size })} {...otherProps} />
+    );
 }
-
-const Button = ({ type, title, icon, variant, full }: ButtonProps) => {
-  return (
-    <button
-    className={`flexCenter gap-3 rounded-full border ${variant} ${full && 'w-full'}`}
-      type={type}
-    >
-      {icon && <Image src={icon} alt={title} width={24} height={24} />}
-      <label className="bold-16 whitespace-nowrap cursor-pointer">{title}</label>
-    </button>
-  )
-}
-
-export default Button

@@ -1,7 +1,24 @@
-import Link from 'next/link'
-import React from 'react'
+"use client"; 
 
-const page = () => {
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+
+const Page = () => {
+  interface User {
+    id: number;
+    name: string;
+    email: string;
+  }
+
+  const [users, setUsers] = useState<User[]>([]); // Store API data
+
+  useEffect(() => {
+    fetch("https://api.example.com/users") // Replace with your Swagger API URL
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .catch((err) => console.error("Error fetching users:", err));
+  }, []);
+
   return (
     <section>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -12,61 +29,61 @@ const page = () => {
               Welcome back
             </h1>
           </div>
+
+          {/* Display fetched users */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold">Users from API:</h2>
+            <ul className="list-disc pl-5">
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <li key={user.id} className="p-2 border-b">
+                    {user.name} - {user.email}
+                  </li>
+                ))
+              ) : (
+                <p>Loading...</p>
+              )}
+            </ul>
+          </div>
+
           {/* Contact form */}
           <form className="mx-auto max-w-[400px]">
             <div className="space-y-5">
               <div>
-                <label
-                  className="mb-1 block text-sm font-medium text-black-200/65"
-                  htmlFor="email"
-                >
+                <label className="mb-1 block text-sm font-medium text-black-200/65" htmlFor="email">
                   Email
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="form-input w-full"
-                  placeholder="Your email"
-                />
+                <input id="email" type="email" className="form-input w-full" placeholder="Your email" />
               </div>
               <div>
                 <div className="mb-1 flex items-center justify-between gap-3">
-                  <label
-                    className="block text-sm font-medium text-black-200/65"
-                    htmlFor="password"
-                  >
+                  <label className="block text-sm font-medium text-black-200/65" htmlFor="password">
                     Password
                   </label>
-                  <Link
-                    className="text-sm text-gray-600 hover:underline"
-                    href="/Reset-Password"
-                  >
+                  <Link className="text-sm text-gray-600 hover:underline" href="/Reset-Password">
                     Forgot?
                   </Link>
                 </div>
-                <input
-                  id="password"
-                  type="password"
-                  className="form-input w-full"
-                  placeholder="Your password"
-                />
+                <input id="password" type="password" className="form-input w-full" placeholder="Your password" />
               </div>
             </div>
+
             <div className="mt-6 space-y-5">
-              <button className="btn w-full bg-linear-to-t from-green-600 to-black-500 bg-[length:100%_100%] bg-[bottom] text-red shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]">
+              <button className="btn w-full bg-green-600 text-white shadow hover:bg-green-700">
                 Sign in
               </button>
-              <div className="flex items-center gap-3 text-center text-sm italic text-gray-600 before:h-px before:flex-1 before:bg-linear-to-r before:from-transparent before:via-gray-400/25 after:h-px after:flex-1 after:bg-linear-to-r after:from-transparent after:via-gray-400/25">
-                or
+              <div className="flex items-center gap-3 text-center text-sm italic text-gray-600">
+                <span className="flex-1 h-px bg-gray-400"></span> or <span className="flex-1 h-px bg-gray-400"></span>
               </div>
-              <button className="btn relative w-full bg-linear-to-b from-gray-800 to-gray-800/60 bg-[length:100%_100%] bg-[bottom] text-black-300 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(to_right,var(--color-gray-800),var(--color-gray-700),var(--color-gray-800))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] hover:bg-[length:100%_150%]">
+              <button className="btn w-full bg-gray-800 text-white hover:bg-gray-700">
                 Sign In with Google
               </button>
             </div>
           </form>
+
           {/* Bottom link */}
           <div className="mt-6 text-center text-sm text-black-200/65">
-            Don't you have an account?{" "}
+            Don't have an account?{" "}
             <Link className="font-medium text-indigo-500" href="/SignUp">
               Sign Up
             </Link>
@@ -74,7 +91,7 @@ const page = () => {
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default page
+export default Page;
