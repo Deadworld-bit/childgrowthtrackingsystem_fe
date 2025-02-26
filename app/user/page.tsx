@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
+import React from "react";
 
 const initialUsers = [
     { 
