@@ -66,7 +66,7 @@ const Page = () => {
         
         {/* Sign Up Link */}
         <div className="text-center mt-5 text-gray-400">
-          Don't have an account? <Link className="text-green-400 hover:text-green-300" href="/SignUp">Sign Up</Link>
+          Don't have an account? <Link className="text-green-400 hover:text-green-300" href="/SIgnUp">Sign Up</Link>
         </div>
 
         {/* Return Home Link (No underline, highlights on hover) */}
