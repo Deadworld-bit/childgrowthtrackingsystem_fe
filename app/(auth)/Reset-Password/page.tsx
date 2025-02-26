@@ -1,42 +1,46 @@
 import React from 'react'
 
-const page = () => {
+const ResetPasswordPage = () => {
   return (
-    <section>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="py-12 md:py-20">
-          {/* Section header */}
-          <div className="pb-12 text-center">
-            <h1 className="animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-gray-200),var(--color-indigo-200),var(--color-gray-50),var(--color-indigo-300),var(--color-gray-200))] bg-[length:200%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
-              Reset your password
-            </h1>
+    <section className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+      <div className="max-w-lg w-full px-6 py-12 bg-gray-800 rounded-2xl shadow-lg">
+        {/* Section header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white md:text-4xl">
+            Forgot your password?
+          </h1>
+          <p className="mt-2 text-gray-400">
+            Enter your email, and we'll send you a link to reset your password.
+          </p>
+        </div>
+        {/* Reset form */}
+        <form>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300" htmlFor="email">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="mt-2 w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              placeholder="Enter your email"
+              required
+            />
           </div>
-          {/* Contact form */}
-          <form className="mx-auto max-w-[400px]">
-            <div>
-              <label
-                className="mb-1 block text-sm font-medium text-indigo-200/65"
-                htmlFor="email"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="form-input w-full"
-                placeholder="Your email"
-              />
-            </div>
-            <div className="mt-6">
-              <button className="btn w-full bg-linear-to-t from-indigo-600 to-indigo-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-[inset_0px_1px_0px_0px_--theme(--color-white/.16)] hover:bg-[length:100%_150%]">
-                Reset Password
-              </button>
-            </div>
-          </form>
+          <button className="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-lg shadow-md transition">
+            Send Reset Link
+          </button>
+        </form>
+        {/* Back to login */}
+        <div className="mt-6 text-center text-sm text-gray-400">
+          Remember your password?{' '}
+          <a href="/SignIn" className="text-indigo-400 hover:underline">
+            SignIn
+          </a>
         </div>
       </div>
     </section>
   )
 }
 
-export default page
+export default ResetPasswordPage

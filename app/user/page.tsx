@@ -47,12 +47,33 @@ const initialUsers = [
     },
 ];
 
+const USERS_PER_PAGE = 9;
+
 export default function UserPage() {
     const [users, setUsers] = useState(initialUsers);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
+
+    const startIndex = (currentPage - 1) * USERS_PER_PAGE;
+    const filteredUsers = users.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.job.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const displayedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+
+    const nextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
+
+    const prevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
 
     // Open Update Modal
     const openEditModal = (user) => {
@@ -102,6 +123,17 @@ export default function UserPage() {
             <main className="flex-grow px-4 md:px-8 lg:px-16">
                 <h1 className="text-3xl font-bold my-6 text-left">User Management</h1>
 
+                <div className="flex justify-between items-center mb-4">
+                    <div></div>
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full table-auto border border-gray-600 bg-[#1E1E1E] shadow-lg">
                         <thead className="bg-gray-800 text-white text-lg">
@@ -116,9 +148,9 @@ export default function UserPage() {
                         </thead>
 
                         <tbody className="text-white text-lg">
-                            {users.map((user, index) => (
+                            {displayedUsers.map((user, index) => (
                                 <tr key={user.id} className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]">
-                                    <td className="p-4">{index + 1}</td>
+                                    <td className="p-4">{startIndex + index + 1}</td>
                                     <td className="p-4">{user.name}</td>
                                     <td className="p-4">{user.job}</td>
                                     <td className="p-4">{user.dob}</td>
@@ -141,6 +173,28 @@ export default function UserPage() {
                             ))}
                         </tbody>
                     </table>
+                </div>
+                {/* Pagination Controls */}
+                <div className="flex justify-center items-center mt-6 gap-4">
+                    <button 
+                        onClick={prevPage} 
+                        disabled={currentPage === 1} 
+                        className={`px-4 py-2 rounded-lg text-white ${currentPage === 1 ? "bg-gray-700 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                    >
+                        Previous
+                    </button>
+
+                    <span className="text-lg font-semibold">
+                        Page {currentPage} of {totalPages}
+                    </span>
+
+                    <button 
+                        onClick={nextPage} 
+                        disabled={currentPage === totalPages} 
+                        className={`px-4 py-2 rounded-lg text-white ${currentPage === totalPages ? "bg-gray-700 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                    >
+                        Next
+                    </button>
                 </div>
             </main>
 

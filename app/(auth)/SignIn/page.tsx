@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -10,84 +10,70 @@ const Page = () => {
     email: string;
   }
 
-  const [users, setUsers] = useState<User[]>([]); // Store API data
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    fetch("https://api.example.com/users") // Replace with your Swagger API URL
+    fetch("https://api.example.com/users") // Replace with your API URL
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((err) => console.error("Error fetching users:", err));
   }, []);
 
   return (
-    <section>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="py-12 md:py-20">
-          {/* Section header */}
-          <div className="pb-12 text-center">
-            <h1 className="animate-[gradient_6s_linear_infinite] bg-[linear-gradient(to_right,var(--color-gray-200),var(--color-indigo-200),var(--color-gray-50),var(--color-indigo-300),var(--color-gray-200))] bg-[length:200%_auto] bg-clip-text font-nacelle text-3xl font-semibold text-transparent md:text-4xl">
-              Welcome back
-            </h1>
+    <section className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="max-w-lg w-full p-8 bg-gray-900 rounded-xl shadow-lg">
+        <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+          Welcome Back
+        </h1>
+        
+        {/* Users List */}
+        <div className="my-6">
+          <h2 className="text-lg font-semibold">Users from API:</h2>
+          <ul className="list-disc pl-5 text-gray-400">
+            {users.length > 0 ? (
+              users.map((user) => (
+                <li key={user.id} className="p-2 border-b border-gray-700">
+                  {user.name} - {user.email}
+                </li>
+              ))
+            ) : (
+              <p>Loading...</p>
+            )}
+          </ul>
+        </div>
+        
+        {/* Login Form */}
+        <form className="space-y-5">
+          <div>
+            <label className="block text-gray-400 mb-1" htmlFor="email">Email</label>
+            <input id="email" type="email" className="w-full p-3 rounded-lg bg-gray-800 text-white" placeholder="Your email" />
           </div>
-
-          {/* Display fetched users */}
-          <div className="mb-6">
-            <h2 className="text-xl font-bold">Users from API:</h2>
-            <ul className="list-disc pl-5">
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <li key={user.id} className="p-2 border-b">
-                    {user.name} - {user.email}
-                  </li>
-                ))
-              ) : (
-                <p>Loading...</p>
-              )}
-            </ul>
-          </div>
-
-          {/* Contact form */}
-          <form className="mx-auto max-w-[400px]">
-            <div className="space-y-5">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-black-200/65" htmlFor="email">
-                  Email
-                </label>
-                <input id="email" type="email" className="form-input w-full" placeholder="Your email" />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-medium text-black-200/65" htmlFor="password">
-                    Password
-                  </label>
-                  <Link className="text-sm text-gray-600 hover:underline" href="/Reset-Password">
-                    Forgot?
-                  </Link>
-                </div>
-                <input id="password" type="password" className="form-input w-full" placeholder="Your password" />
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              <button className="btn w-full bg-green-600 text-white shadow hover:bg-green-700">
-                Sign in
-              </button>
-              <div className="flex items-center gap-3 text-center text-sm italic text-gray-600">
-                <span className="flex-1 h-px bg-gray-400"></span> or <span className="flex-1 h-px bg-gray-400"></span>
-              </div>
-              <button className="btn w-full bg-gray-800 text-white hover:bg-gray-700">
-                Sign In with Google
-              </button>
-            </div>
-          </form>
-
-          {/* Bottom link */}
-          <div className="mt-6 text-center text-sm text-black-200/65">
-            Don't have an account?{" "}
-            <Link className="font-medium text-indigo-500" href="/SignUp">
-              Sign Up
+          <div>
+            <label className="block text-gray-400 mb-1" htmlFor="password">Password</label>
+            <input id="password" type="password" className="w-full p-3 rounded-lg bg-gray-800 text-white" placeholder="Your password" />
+            <Link className="text-sm text-blue-400 hover:underline block text-right mt-1" href="/Reset-Password">
+              Forgot password?
             </Link>
           </div>
+          <button className="w-full py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold shadow">
+            Sign in
+          </button>
+          <div className="text-center text-gray-500 text-sm">or</div>
+          <button className="w-full py-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-semibold">
+            Sign In with Google
+          </button>
+        </form>
+        
+        {/* Sign Up Link */}
+        <div className="text-center mt-5 text-gray-400">
+          Don't have an account? <Link className="text-green-400 hover:text-green-300" href="/SignUp">Sign Up</Link>
+        </div>
+
+        {/* Return Home Link (No underline, highlights on hover) */}
+        <div className="text-center mt-5">
+          <Link className="text-blue-400 hover:text-blue-300 font-semibold transition-colors duration-200" href="/">
+            ← Return Home
+          </Link>
         </div>
       </div>
     </section>
