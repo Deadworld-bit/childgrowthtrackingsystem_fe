@@ -1,22 +1,22 @@
 import api from ".";
 
-//Define User type
+// Define User type
 export interface User {
     id: string;
-    name: string;
+    userName: string;
     email: string;
     roleId: string;
-    membershipId: string;
-    createDate: Date;
-    updateDate: Date;
+    membership: string;
+    createdDate: Date;
+    updatedDate: Date;
     status: boolean;
 }
 
 // Fetch all users
 const getUsers = async (): Promise<User[]> => {
     try {
-        const response = await api.get<User[]>("/users");
-        return response.data;
+        const response = await api.get<{ status: string; message: string; data: User[] }>("/users");
+        return response.data.data; // Extract the data property
     } catch (error) {
         console.error("Error fetching users:", error);
         throw error;
@@ -48,12 +48,12 @@ const updateUser = async (id: string, userData: Partial<User>): Promise<User> =>
 // Delete a user
 const deleteUser = async (id: string): Promise<void> => {
     try {
-      await api.delete(`/users/${id}`);
+        await api.put(`/users/${id}`);
     } catch (error) {
-      console.error(`Error deleting user with ID ${id}:`, error);
-      throw error;
+        console.error(`Error deleting user with ID ${id}:`, error);
+        throw error;
     }
-  };
+};
 
 const userApi = {
     getUsers,

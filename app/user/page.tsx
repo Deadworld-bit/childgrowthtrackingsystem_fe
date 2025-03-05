@@ -31,6 +31,7 @@ export default function UserPage() {
             setUsers(data);
         } catch (error) {
             console.error("Error fetching users:", error);
+            setUsers([]); // Set users to an empty array in case of error
         }
     };
 
@@ -38,10 +39,17 @@ export default function UserPage() {
     const startIndex = (currentPage - 1) * USERS_PER_PAGE;
     const filteredUsers = users.filter(
         (user) =>
-            user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            (user.userName &&
+                user.userName
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())) ||
+            (user.email &&
+                user.email.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    const displayedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+    const displayedUsers = filteredUsers.slice(
+        startIndex,
+        startIndex + USERS_PER_PAGE
+    );
 
     const nextPage = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -71,8 +79,15 @@ export default function UserPage() {
     const saveChanges = async () => {
         if (editingUser) {
             try {
-                const updatedUser = await userApi.updateUser(editingUser.id, editingUser);
-                setUsers(users.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+                const updatedUser = await userApi.updateUser(
+                    editingUser.id,
+                    editingUser
+                );
+                setUsers(
+                    users.map((user) =>
+                        user.id === updatedUser.id ? updatedUser : user
+                    )
+                );
                 closeEditModal();
             } catch (error) {
                 console.error("Error updating user:", error);
@@ -129,8 +144,12 @@ export default function UserPage() {
                             <tr>
                                 <th className="p-4 text-left w-[5%]">#</th>
                                 <th className="p-4 text-left w-[20%]">Name</th>
-                                <th className="p-4 text-left w-[20%]">Job</th>
-                                <th className="p-4 text-left w-[15%]">DOB</th>
+                                <th className="p-4 text-left w-[20%]">
+                                    Membership
+                                </th>
+                                <th className="p-4 text-left w-[15%]">
+                                    Create Date
+                                </th>
                                 <th className="p-4 text-left w-[25%]">Email</th>
                                 <th className="p-4 text-left w-[15%]">
                                     Actions
@@ -147,9 +166,15 @@ export default function UserPage() {
                                     <td className="p-4">
                                         {startIndex + index + 1}
                                     </td>
-                                    <td className="p-4">{user.name}</td>
-                                    <td className="p-4">{user.membershipId}</td>
-                                    <td className="p-4">{user.createDate.toLocaleDateString()}</td>
+                                    <td className="p-4">{user.userName}</td>
+                                    <td className="p-4">{user.membership}</td>
+                                    <td className="p-4">
+                                        {user.createdDate
+                                            ? new Date(
+                                                  user.createdDate
+                                              ).toLocaleDateString()
+                                            : "N/A"}
+                                    </td>
                                     <td className="p-4">{user.email}</td>
                                     <td className="p-4 flex gap-3">
                                         <button
@@ -211,14 +236,14 @@ export default function UserPage() {
                 closeEditModal={closeEditModal}
                 saveChanges={saveChanges}
             />
-            ;{/* Delete Confirmation Modal */}
+            {/* Delete Confirmation Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 user={deletingUser}
                 closeDeleteModal={closeDeleteModal}
                 handleDelete={handleDelete}
             />
-            ;{/* Footer */}
+            {/* Footer */}
             <Footer />
         </div>
     );

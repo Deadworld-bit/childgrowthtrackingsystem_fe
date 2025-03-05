@@ -236,7 +236,7 @@ export default function ChildPage() {
                                         >
                                             Delete
                                         </button>
-                                        <Link href="/child/graph">
+                                        <Link href="/child/detail">
                                             <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                                                 Detail
                                             </button>

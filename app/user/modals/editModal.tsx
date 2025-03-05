@@ -2,7 +2,7 @@ import React from "react";
 
 interface EditModalProps {
   isOpen: boolean;
-  user: { id: string; name: string; email: string, roleId: string, membershipId: string};
+  user: { id: string; userName: string; email: string, roleId: string, membership: string};
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   closeEditModal: () => void;
   saveChanges: () => void;
@@ -21,7 +21,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <input
             type="text"
             name="name"
-            value={user.name}
+            value={user.userName}
             onChange={handleChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -54,7 +54,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <input
             type="text"
             name="membershipId"
-            value={user.membershipId}
+            value={user.membership}
             onChange={handleChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
