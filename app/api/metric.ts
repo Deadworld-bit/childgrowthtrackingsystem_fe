@@ -1,7 +1,7 @@
 import api from ".";
 
 //Define User type
-interface User {
+interface Metric {
     id: string;
     weight: number;
     height: number;
@@ -11,3 +11,14 @@ interface User {
     updateDate: Date;
     status: boolean;
 }
+
+// Fetch child by ID
+const getChildById = async (id: number): Promise<Metric> => {
+    try {
+        const response = await api.get<Metric>(`/metric/findById/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching child with ID ${id}:`, error);
+        throw error;
+    }
+};

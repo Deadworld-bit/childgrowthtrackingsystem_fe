@@ -1,12 +1,12 @@
 import api from ".";
 
 //Define User type
-interface Child {
+export interface Child {
     id: string;
     name: string;
     dob: Date;
     gender: string;
-    parentId: string;
+    parentName: string;
     createDate: Date;
     updateDate: Date;
     status: boolean;
@@ -15,8 +15,8 @@ interface Child {
 // Fetch all children
 const getChild = async (): Promise<Child[]> => {
     try {
-        const response = await api.get<Child[]>("/child/getAllChild");
-        return response.data;
+        const response = await api.get<{ status: string; message: string; data: Child[] }>("/child/getAllChild");
+        return response.data.data;
     } catch (error) {
         console.error("Error fetching child:", error);
         throw error;
@@ -57,7 +57,7 @@ const createChild = async (childData: Omit<Child, "id" | "createDate" | "updateD
 };
 
 // Update a child
-const updateChild = async (id: number, childData: Partial<Child>): Promise<Child> => {
+const updateChild = async (id: string, childData: Partial<Child>): Promise<Child> => {
     try {
         const response = await api.put<Child>(`/child/update/${id}`, childData);
         return response.data;
@@ -68,7 +68,7 @@ const updateChild = async (id: number, childData: Partial<Child>): Promise<Child
 };
 
 // Delete a user
-const deleteChild = async (id: number): Promise<void> => {
+const deleteChild = async (id: string): Promise<void> => {
     try {
       await api.delete(`/child/delete/${id}`);
     } catch (error) {

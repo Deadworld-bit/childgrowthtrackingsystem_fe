@@ -17,8 +17,7 @@ export default function UserPage() {
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-    const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
-
+    
     // Fetch users when component mounts
     useEffect(() => {
         fetchUsers();
@@ -50,6 +49,7 @@ export default function UserPage() {
         startIndex,
         startIndex + USERS_PER_PAGE
     );
+    const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
     const nextPage = () => {
         if (currentPage < totalPages) setCurrentPage(currentPage + 1);

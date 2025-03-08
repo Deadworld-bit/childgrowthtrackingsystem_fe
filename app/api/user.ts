@@ -16,7 +16,7 @@ export interface User {
 const getUsers = async (): Promise<User[]> => {
     try {
         const response = await api.get<{ status: string; message: string; data: User[] }>("/users");
-        return response.data.data; // Extract the data property
+        return response.data.data; 
     } catch (error) {
         console.error("Error fetching users:", error);
         throw error;

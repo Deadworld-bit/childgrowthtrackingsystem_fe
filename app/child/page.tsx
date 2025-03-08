@@ -1,104 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import Link from "next/link";
-
-const initialChildren = [
-    {
-        id: 1,
-        name: "Alice Johnson",
-        dob: "2015-05-15",
-        gender: "Female",
-        parentName: "John Johnson",
-        createdDate: "2023-01-01",
-    },
-    {
-        id: 2,
-        name: "Bob Smith",
-        dob: "2016-08-22",
-        gender: "Male",
-        parentName: "Jane Smith",
-        createdDate: "2023-02-15",
-    },
-    {
-        id: 3,
-        name: "Charlie Brown",
-        dob: "2017-12-10",
-        gender: "Male",
-        parentName: "Chris Brown",
-        createdDate: "2023-03-10",
-    },
-    {
-        id: 4,
-        name: "David Lee",
-        dob: "2014-07-25",
-        gender: "Male",
-        parentName: "Diana Lee",
-        createdDate: "2022-12-20",
-    },
-    {
-        id: 5,
-        name: "Emma Davis",
-        dob: "2015-04-30",
-        gender: "Female",
-        parentName: "Edward Davis",
-        createdDate: "2023-04-18",
-    },
-    {
-        id: 6,
-        name: "Frank Wilson",
-        dob: "2013-11-05",
-        gender: "Male",
-        parentName: "Fiona Wilson",
-        createdDate: "2022-09-14",
-    },
-    {
-        id: 7,
-        name: "Grace Hall",
-        dob: "2016-03-18",
-        gender: "Female",
-        parentName: "George Hall",
-        createdDate: "2023-06-30",
-    },
-    {
-        id: 8,
-        name: "Henry Miller",
-        dob: "2017-02-12",
-        gender: "Male",
-        parentName: "Hannah Miller",
-        createdDate: "2023-07-22",
-    },
-    {
-        id: 9,
-        name: "Ivy Anderson",
-        dob: "2014-09-28",
-        gender: "Female",
-        parentName: "Ian Anderson",
-        createdDate: "2023-05-09",
-    },
-    {
-        id: 10,
-        name: "Jack Carter",
-        dob: "2015-06-08",
-        gender: "Male",
-        parentName: "Jill Carter",
-        createdDate: "2023-08-11",
-    },
-];
+import EditModal from "./modals/editModal";
+import DeleteModal from "./modals/deleteModal";
+import childApi, { Child } from "@/app/api/child";
 
 const USERS_PER_PAGE = 9;
 
 export default function ChildPage() {
-    const [children, setChildren] = useState(initialChildren);
+    const [children, setChildren] = useState<Child[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [editingChild, setEditingChild] = useState(null);
-    const [deletingChild, setDeletingChild] = useState(null);
+    const [editingChild, setEditingChild] = useState<Child | null>(null);
+    const [deletingChild, setDeletingChild] = useState<Child | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
+
+    useEffect(() => {
+        fetchChildren();
+    }, []);
+
+    // Fetch users from API
+    const fetchChildren = async () => {
+        try {
+            const data = await childApi.getChild(); // Use API call
+            setChildren(data);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            setChildren([]); // Set users to an empty array in case of error
+        }
+    };
 
     const startIndex = (currentPage - 1) * USERS_PER_PAGE;
     const filteredChildren = children.filter(
@@ -121,7 +56,7 @@ export default function ChildPage() {
     };
 
     // Open Update Modal
-    const openEditModal = (child) => {
+    const openEditModal = (child: Child) => {
         setEditingChild(child);
         setIsEditModalOpen(true);
     };
@@ -133,21 +68,30 @@ export default function ChildPage() {
     };
 
     // Save Changes in Update Modal
-    const handleChange = (e) => {
-        setEditingChild({ ...editingChild, [e.target.name]: e.target.value });
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (editingChild) {
+            setEditingChild({ ...editingChild, [e.target.name]: e.target.value });
+        }
     };
 
-    const saveChanges = () => {
-        setChildren(
-            children.map((child) =>
-                child.id === editingChild.id ? editingChild : child
-            )
-        );
-        closeEditModal();
+    const saveChanges = async () => {
+        if (editingChild) {
+            try {
+                const updatedChild = await childApi.updateChild(editingChild.id, editingChild);
+                setChildren(
+                    children.map((child) =>
+                        child.id === updatedChild.id ? updatedChild : child
+                    )
+                );
+                closeEditModal();
+            } catch (error) {
+                console.error("Error updating child:", error);
+            }
+        }
     };
 
     // Open Delete Modal
-    const openDeleteModal = (child) => {
+    const openDeleteModal = (child: Child) => {
         setDeletingChild(child);
         setIsDeleteModalOpen(true);
     };
@@ -159,9 +103,16 @@ export default function ChildPage() {
     };
 
     // Handle Delete
-    const handleDelete = () => {
-        setChildren(children.filter((child) => child.id !== deletingChild.id));
-        closeDeleteModal();
+    const handleDelete = async () => {
+        if (deletingChild) {
+            try {
+                await childApi.deleteChild(deletingChild.id);
+                setChildren(children.filter((child) => child.id !== deletingChild.id));
+                closeDeleteModal();
+            } catch (error) {
+                console.error("Error deleting child:", error);
+            }
+        }
     };
 
     return (
@@ -192,18 +143,10 @@ export default function ChildPage() {
                                 <th className="p-4 text-left w-[5%]">#</th>
                                 <th className="p-4 text-left w-[20%]">Name</th>
                                 <th className="p-4 text-left w-[15%]">DOB</th>
-                                <th className="p-4 text-left w-[10%]">
-                                    Gender
-                                </th>
-                                <th className="p-4 text-left w-[20%]">
-                                    Parent's Name
-                                </th>
-                                <th className="p-4 text-left w-[15%]">
-                                    Created Date
-                                </th>
-                                <th className="p-4 text-left w-[15%]">
-                                    Actions
-                                </th>
+                                <th className="p-4 text-left w-[10%]">Gender</th>
+                                <th className="p-4 text-left w-[20%]">Parent's Name</th>
+                                <th className="p-4 text-left w-[15%]">Created Date</th>
+                                <th className="p-4 text-left w-[15%]">Actions</th>
                             </tr>
                         </thead>
 
@@ -213,14 +156,20 @@ export default function ChildPage() {
                                     key={child.id}
                                     className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
                                 >
-                                    <td className="p-4">
-                                        {startIndex + index + 1}
-                                    </td>
+                                    <td className="p-4">{startIndex + index + 1}</td>
                                     <td className="p-4">{child.name}</td>
-                                    <td className="p-4">{child.dob}</td>
+                                    <td className="p-4">{child.dob
+                                            ? new Date(
+                                                  child.dob
+                                              ).toLocaleDateString()
+                                            : "N/A"}</td>
                                     <td className="p-4">{child.gender}</td>
                                     <td className="p-4">{child.parentName}</td>
-                                    <td className="p-4">{child.createdDate}</td>
+                                    <td className="p-4">{child.createDate
+                                            ? new Date(
+                                                  child.createDate
+                                              ).toLocaleDateString()
+                                            : "N/A"}</td>
                                     <td className="p-4 flex gap-3">
                                         <button
                                             onClick={() => openEditModal(child)}
@@ -229,9 +178,7 @@ export default function ChildPage() {
                                             Update
                                         </button>
                                         <button
-                                            onClick={() =>
-                                                openDeleteModal(child)
-                                            }
+                                            onClick={() => openDeleteModal(child)}
                                             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                                         >
                                             Delete
@@ -280,100 +227,21 @@ export default function ChildPage() {
             </main>
 
             {/* Update Modal */}
-            {isEditModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-                    <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                        <h2 className="text-2xl font-bold mb-4">
-                            Update Child
-                        </h2>
-                        <div className="mb-4">
-                            <label className="block text-sm">Name</label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={editingChild.name}
-                                onChange={handleChange}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm">DOB</label>
-                            <input
-                                type="date"
-                                name="dob"
-                                value={editingChild.dob}
-                                onChange={handleChange}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm">Gender</label>
-                            <input
-                                type="text"
-                                name="gender"
-                                value={editingChild.gender}
-                                onChange={handleChange}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm">
-                                Parent's Name
-                            </label>
-                            <input
-                                type="text"
-                                name="parentName"
-                                value={editingChild.parentName}
-                                onChange={handleChange}
-                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="flex justify-end gap-4">
-                            <button
-                                onClick={closeEditModal}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={saveChanges}
-                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <EditModal
+                isOpen={isEditModalOpen}
+                child={editingChild}
+                handleChange={handleChange}
+                closeEditModal={closeEditModal}
+                saveChanges={saveChanges}
+            />
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-                    <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                        <h2 className="text-2xl font-bold mb-4">
-                            Confirm Delete
-                        </h2>
-                        <p className="mb-4">
-                            Are you sure you want to delete{" "}
-                            <strong>{deletingChild?.name}</strong>?
-                        </p>
-                        <div className="flex justify-end gap-4">
-                            <button
-                                onClick={closeDeleteModal}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteModal
+                isOpen={isDeleteModalOpen}
+                child={deletingChild}
+                closeDeleteModal={closeDeleteModal}
+                handleDelete={handleDelete}
+            />
 
             {/* Footer */}
             <Footer />
