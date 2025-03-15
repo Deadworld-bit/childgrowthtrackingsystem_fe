@@ -1,7 +1,7 @@
 import React from "react";
 import { MEMBERSHIP_PLANS } from "@/constants";
 import Tag from "@/components/Tag";
-import Button from "@/components/button";
+import Button from "@/components/Button";
 
 const Membership = () => {
     return (

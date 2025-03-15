@@ -6,6 +6,7 @@ import Footer from "@/sections/Footer";
 import Link from "next/link";
 import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
+import CreateModal from "./modals/createModal"; // Import CreateModal
 import childApi, { Child } from "@/app/api/child";
 
 const USERS_PER_PAGE = 9;
@@ -14,24 +15,27 @@ export default function ChildPage() {
     const [children, setChildren] = useState<Child[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State for Create Modal
     const [editingChild, setEditingChild] = useState<Child | null>(null);
     const [deletingChild, setDeletingChild] = useState<Child | null>(null);
+    const [creatingChild, setCreatingChild] = useState<Partial<Child>>({}); // State for new child
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const [filter, setFilter] = useState("haveDoctor"); // New state for filter
     const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
 
     useEffect(() => {
         fetchChildren();
-    }, []);
+    }, [filter]);
 
-    // Fetch users from API
+    // Fetch children from API based on filter
     const fetchChildren = async () => {
         try {
-            const data = await childApi.getChild(); // Use API call
+            const data = filter === "haveDoctor" ? await childApi.getChildHaveDoctor() : await childApi.getChildDontHaveDoctor();
             setChildren(data);
         } catch (error) {
-            console.error("Error fetching users:", error);
-            setChildren([]); // Set users to an empty array in case of error
+            console.error("Error fetching children:", error);
+            setChildren([]); // Set children to an empty array in case of error
         }
     };
 
@@ -55,6 +59,34 @@ export default function ChildPage() {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
 
+    // Open Create Modal
+    const openCreateModal = () => {
+        setCreatingChild({});
+        setIsCreateModalOpen(true);
+    };
+
+    // Close Create Modal
+    const closeCreateModal = () => {
+        setIsCreateModalOpen(false);
+        setCreatingChild({});
+    };
+
+    // Handle Create Change
+    const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setCreatingChild({ ...creatingChild, [e.target.name]: e.target.value });
+    };
+
+    // Save New Child
+    const saveNewChild = async () => {
+        try {
+            const newChild = await childApi.createChild(creatingChild as Child);
+            setChildren([...children, newChild]);
+            closeCreateModal();
+        } catch (error) {
+            console.error("Error creating child:", error);
+        }
+    };
+
     // Open Update Modal
     const openEditModal = (child: Child) => {
         setEditingChild(child);
@@ -68,7 +100,7 @@ export default function ChildPage() {
     };
 
     // Save Changes in Update Modal
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         if (editingChild) {
             setEditingChild({ ...editingChild, [e.target.name]: e.target.value });
         }
@@ -77,7 +109,12 @@ export default function ChildPage() {
     const saveChanges = async () => {
         if (editingChild) {
             try {
-                const updatedChild = await childApi.updateChild(editingChild.id, editingChild);
+                const updatedChild = await childApi.updateChild(editingChild.id, {
+                    name: editingChild.name,
+                    dob: editingChild.dob,
+                    gender: editingChild.gender,
+                    parentId: editingChild.parentId,
+                });
                 setChildren(
                     children.map((child) =>
                         child.id === updatedChild.id ? updatedChild : child
@@ -126,7 +163,22 @@ export default function ChildPage() {
                 </h1>
 
                 <div className="flex justify-between items-center mb-4">
-                    <div></div>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={openCreateModal}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                        >
+                            Create New Child
+                        </button>
+                        <select
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="haveDoctor">Children with Doctor</option>
+                            <option value="dontHaveDoctor">Children without Doctor</option>
+                        </select>
+                    </div>
                     <input
                         type="text"
                         placeholder="Search..."
@@ -153,7 +205,7 @@ export default function ChildPage() {
                         <tbody className="text-white text-lg">
                             {displayedChildren.map((child, index) => (
                                 <tr
-                                    key={child.id}
+                                    key={child.id.toString()}
                                     className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
                                 >
                                     <td className="p-4">{startIndex + index + 1}</td>
@@ -225,6 +277,15 @@ export default function ChildPage() {
                     </button>
                 </div>
             </main>
+
+            {/* Create Modal */}
+            <CreateModal
+                isOpen={isCreateModalOpen}
+                child={creatingChild}
+                handleChange={handleCreateChange}
+                closeCreateModal={closeCreateModal}
+                saveChanges={saveNewChild}
+            />
 
             {/* Update Modal */}
             <EditModal

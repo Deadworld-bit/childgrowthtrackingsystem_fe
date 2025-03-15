@@ -4,8 +4,8 @@ import React from "react";
 
 interface EditModalProps {
   isOpen: boolean;
-  user: { id: string; userName: string; email: string, roleId: string, membership: string};
-  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  user: { id: BigInt; userName: string; email: string, role: string, membership: string};
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   closeEditModal: () => void;
   saveChanges: () => void;
 }
@@ -22,7 +22,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <label className="block text-sm">Name</label>
           <input
             type="text"
-            name="name"
+            name="userName"
             value={user.userName}
             onChange={handleChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -30,7 +30,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm">Job</label>
+          <label className="block text-sm">Email</label>
           <input
             type="email"
             name="email"
@@ -41,25 +41,30 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm">DOB</label>
-          <input
-            type="text"
-            name="roleId"
-            value={user.roleId}
+          <label className="block text-sm">Role</label>
+          <select
+            name="role"
+            value={user.role}
             onChange={handleChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="DOCTOR">DOCTOR</option>
+            <option value="MEMBER">MEMBER</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm">Email</label>
-          <input
-            type="text"
-            name="membershipId"
+          <label className="block text-sm">Membership</label>
+          <select
+            name="membership"
             value={user.membership}
             onChange={handleChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="BASIC">BASIC</option>
+            <option value="PREMIUM">PREMIUM</option>
+          </select>
         </div>
 
         <div className="flex justify-end gap-4">

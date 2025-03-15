@@ -1,18 +1,18 @@
 import React from "react";
 
-interface EditModalProps {
+interface CreateModalProps {
     isOpen: boolean;
     child: any;
     handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-    closeEditModal: () => void;
+    closeCreateModal: () => void;
     saveChanges: () => void;
 }
 
-const EditModal: React.FC<EditModalProps> = ({
+const CreateModal: React.FC<CreateModalProps> = ({
     isOpen,
     child,
     handleChange,
-    closeEditModal,
+    closeCreateModal,
     saveChanges,
 }) => {
     if (!isOpen) return null;
@@ -20,13 +20,13 @@ const EditModal: React.FC<EditModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
             <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-4">Update Child</h2>
+                <h2 className="text-2xl font-bold mb-4">Create New Child</h2>
                 <div className="mb-4">
                     <label className="block text-sm">Name</label>
                     <input
                         type="text"
                         name="name"
-                        value={child.name}
+                        value={child.name || ""}
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -36,7 +36,7 @@ const EditModal: React.FC<EditModalProps> = ({
                     <input
                         type="date"
                         name="dob"
-                        value={child.dob}
+                        value={child.dob || ""}
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -45,7 +45,7 @@ const EditModal: React.FC<EditModalProps> = ({
                     <label className="block text-sm">Gender</label>
                     <select
                         name="gender"
-                        value={child.gender}
+                        value={child.gender || ""}
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
@@ -54,18 +54,18 @@ const EditModal: React.FC<EditModalProps> = ({
                     </select>
                 </div>
                 <div className="mb-4">
-                    <label className="block text-sm">Parent's Name</label>
+                    <label className="block text-sm">Parent ID</label>
                     <input
                         type="text"
-                        name="parentName"
-                        value={child.parentName}
+                        name="parentId"
+                        value={child.parentId || ""}
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
                 <div className="flex justify-end gap-4">
                     <button
-                        onClick={closeEditModal}
+                        onClick={closeCreateModal}
                         className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                     >
                         Cancel
@@ -82,4 +82,4 @@ const EditModal: React.FC<EditModalProps> = ({
     );
 };
 
-export default EditModal;
+export default CreateModal;

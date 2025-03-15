@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 import logoImage from "@/assets/images/logo.svg";
-import Button from "@/components/button";
+import Button from "@/components/Button";
 
 const navLinks = [
     { label: "Home", href: "/" },
@@ -15,6 +17,22 @@ const navLinks = [
 
 export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        const user = Cookies.get("user");
+        if (user) {
+            setIsLoggedIn(true);
+        }
+    }, []);
+
+    const handleLogout = () => {
+        Cookies.remove("user");
+        Cookies.remove("token");
+        setIsLoggedIn(false);
+        router.push("/SignIn");
+    };
 
     return (
         <>
@@ -64,22 +82,34 @@ export default function Navbar() {
                                     <line x1="3" y1="18" x2="21" y2="18"></line>
                                 </svg>
                             </button>
-                            <Link href="/SignIn">
+                            {isLoggedIn ? (
                                 <Button
                                     variant="secondary"
                                     className="hidden md:inline-flex items-center"
+                                    onClick={handleLogout}
                                 >
-                                    Log In
+                                    Logout
                                 </Button>
-                            </Link>
-                            <Link href="/SIgnUp">
-                                <Button
-                                    variant="primary"
-                                    className="hidden md:inline-flex items-center"
-                                >
-                                    Sign Up
-                                </Button>
-                            </Link>
+                            ) : (
+                                <>
+                                    <Link href="/SignIn">
+                                        <Button
+                                            variant="secondary"
+                                            className="hidden md:inline-flex items-center"
+                                        >
+                                            Log In
+                                        </Button>
+                                    </Link>
+                                    <Link href="/SIgnUp">
+                                        <Button
+                                            variant="primary"
+                                            className="hidden md:inline-flex items-center"
+                                        >
+                                            Sign Up
+                                        </Button>
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

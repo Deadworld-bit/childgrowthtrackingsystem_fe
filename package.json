@@ -12,6 +12,7 @@
     "axios": "^1.8.1",
     "class-variance-authority": "^0.7.1",
     "framer-motion": "^12.4.4",
+    "js-cookie": "^3.0.5",
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -19,6 +20,7 @@
     "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
     "@types/next": "^8.0.7",
     "@types/node": "^20",
     "@types/react": "^19",
