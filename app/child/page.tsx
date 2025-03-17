@@ -31,7 +31,10 @@ export default function ChildPage() {
     // Fetch children from API based on filter
     const fetchChildren = async () => {
         try {
-            const data = filter === "haveDoctor" ? await childApi.getChildHaveDoctor() : await childApi.getChildDontHaveDoctor();
+            const data =
+                filter === "haveDoctor"
+                    ? await childApi.getChildHaveDoctor()
+                    : await childApi.getChildDontHaveDoctor();
             setChildren(data);
         } catch (error) {
             console.error("Error fetching children:", error);
@@ -72,7 +75,9 @@ export default function ChildPage() {
     };
 
     // Handle Create Change
-    const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleCreateChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         setCreatingChild({ ...creatingChild, [e.target.name]: e.target.value });
     };
 
@@ -100,21 +105,29 @@ export default function ChildPage() {
     };
 
     // Save Changes in Update Modal
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         if (editingChild) {
-            setEditingChild({ ...editingChild, [e.target.name]: e.target.value });
+            setEditingChild({
+                ...editingChild,
+                [e.target.name]: e.target.value,
+            });
         }
     };
 
     const saveChanges = async () => {
         if (editingChild) {
             try {
-                const updatedChild = await childApi.updateChild(editingChild.id, {
-                    name: editingChild.name,
-                    dob: editingChild.dob,
-                    gender: editingChild.gender,
-                    parentId: editingChild.parentId,
-                });
+                const updatedChild = await childApi.updateChild(
+                    editingChild.id,
+                    {
+                        name: editingChild.name,
+                        dob: editingChild.dob,
+                        gender: editingChild.gender,
+                        parentId: editingChild.parentId,
+                    }
+                );
                 setChildren(
                     children.map((child) =>
                         child.id === updatedChild.id ? updatedChild : child
@@ -144,7 +157,9 @@ export default function ChildPage() {
         if (deletingChild) {
             try {
                 await childApi.deleteChild(deletingChild.id);
-                setChildren(children.filter((child) => child.id !== deletingChild.id));
+                setChildren(
+                    children.filter((child) => child.id !== deletingChild.id)
+                );
                 closeDeleteModal();
             } catch (error) {
                 console.error("Error deleting child:", error);
@@ -175,8 +190,12 @@ export default function ChildPage() {
                             onChange={(e) => setFilter(e.target.value)}
                             className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="haveDoctor">Children with Doctor</option>
-                            <option value="dontHaveDoctor">Children without Doctor</option>
+                            <option value="haveDoctor">
+                                Children with Doctor
+                            </option>
+                            <option value="dontHaveDoctor">
+                                Children without Doctor
+                            </option>
                         </select>
                     </div>
                     <input
@@ -195,10 +214,18 @@ export default function ChildPage() {
                                 <th className="p-4 text-left w-[5%]">#</th>
                                 <th className="p-4 text-left w-[20%]">Name</th>
                                 <th className="p-4 text-left w-[15%]">DOB</th>
-                                <th className="p-4 text-left w-[10%]">Gender</th>
-                                <th className="p-4 text-left w-[20%]">Parent's Name</th>
-                                <th className="p-4 text-left w-[15%]">Created Date</th>
-                                <th className="p-4 text-left w-[15%]">Actions</th>
+                                <th className="p-4 text-left w-[10%]">
+                                    Gender
+                                </th>
+                                <th className="p-4 text-left w-[20%]">
+                                    Parent's Name
+                                </th>
+                                <th className="p-4 text-left w-[15%]">
+                                    Created Date
+                                </th>
+                                <th className="p-4 text-left w-[15%]">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
 
@@ -208,20 +235,26 @@ export default function ChildPage() {
                                     key={child.id.toString()}
                                     className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
                                 >
-                                    <td className="p-4">{startIndex + index + 1}</td>
+                                    <td className="p-4">
+                                        {startIndex + index + 1}
+                                    </td>
                                     <td className="p-4">{child.name}</td>
-                                    <td className="p-4">{child.dob
+                                    <td className="p-4">
+                                        {child.dob
                                             ? new Date(
                                                   child.dob
                                               ).toLocaleDateString()
-                                            : "N/A"}</td>
+                                            : "N/A"}
+                                    </td>
                                     <td className="p-4">{child.gender}</td>
                                     <td className="p-4">{child.parentName}</td>
-                                    <td className="p-4">{child.createDate
+                                    <td className="p-4">
+                                        {child.createDate
                                             ? new Date(
                                                   child.createDate
                                               ).toLocaleDateString()
-                                            : "N/A"}</td>
+                                            : "N/A"}
+                                    </td>
                                     <td className="p-4 flex gap-3">
                                         <button
                                             onClick={() => openEditModal(child)}
@@ -230,12 +263,16 @@ export default function ChildPage() {
                                             Update
                                         </button>
                                         <button
-                                            onClick={() => openDeleteModal(child)}
+                                            onClick={() =>
+                                                openDeleteModal(child)
+                                            }
                                             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                                         >
                                             Delete
                                         </button>
-                                        <Link href="/child/detail">
+                                        <Link
+                                            href={`/child/detail/${child.id}`}
+                                        >
                                             <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                                                 Detail
                                             </button>

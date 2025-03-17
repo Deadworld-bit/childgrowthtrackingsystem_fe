@@ -38,8 +38,8 @@ const getChildDontHaveDoctor = async (): Promise<Child[]> => {
 // Fetch child by ID
 const getChildById = async (id: BigInt): Promise<Child> => {
     try {
-        const response = await api.get<Child>(`/child/${id}`);
-        return response.data;
+        const response = await api.get<{ status: string; message: string; data: Child }>(`/child/${id}`);
+        return response.data.data;
     } catch (error) {
         console.error(`Error fetching child with ID ${id}:`, error);
         throw error;

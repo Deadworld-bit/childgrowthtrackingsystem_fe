@@ -1,24 +1,30 @@
 import api from ".";
 
-//Define User type
-interface Metric {
-    id: string;
+// Define Metric type
+export interface Metric {
+    id: BigInt;
     weight: number;
     height: number;
-    BMI: number;
+    bmi: number;
     childId: string;
+    recordedDate: Date;
     createDate: Date;
-    updateDate: Date;
     status: boolean;
 }
 
-// Fetch child by ID
-const getChildById = async (id: number): Promise<Metric> => {
+// Fetch metrics by child ID
+const getMetricsByChildId = async (childId: BigInt): Promise<Metric[]> => {
     try {
-        const response = await api.get<Metric>(`/metric/findById/${id}`);
-        return response.data;
+        const response = await api.get<{ status: string; message: string; data: Metric[] }>(`/metric/findByChildId`);
+        return response.data.data;
     } catch (error) {
-        console.error(`Error fetching child with ID ${id}:`, error);
+        console.error(`Error fetching metrics for child with ID ${childId}:`, error);
         throw error;
     }
 };
+
+const metricApi = {
+    getMetricsByChildId,
+};
+
+export default metricApi;

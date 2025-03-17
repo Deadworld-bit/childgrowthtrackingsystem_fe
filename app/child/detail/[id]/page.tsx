@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import childApi, { Child } from "@/app/api/child";
+import metricApi, { Metric } from "@/app/api/metric";
 import {
     LineChart,
     Line,
@@ -14,40 +17,46 @@ import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 
 export default function ChildDetailPage() {
-    const [entries, setEntries] = useState([
-        { date: "2024-01-20", weight: 24, height: 122, bmi: 16.1 }, // Underweight
-        { date: "2024-02-25", weight: 38, height: 130, bmi: 22.5 }, // Normal weight
-        { date: "2024-03-02", weight: 20, height: 120, bmi: 13.9 }, // Underweight
-        { date: "2024-04-08", weight: 47, height: 134, bmi: 26.2 }, // Overweight
-        { date: "2024-05-15", weight: 27, height: 124, bmi: 17.6 }, // Underweight
-        { date: "2024-06-22", weight: 55, height: 137, bmi: 29.2 }, // Overweight
-        { date: "2024-07-29", weight: 30, height: 126, bmi: 18.9 }, // Normal weight
-        { date: "2024-08-05", weight: 42, height: 132, bmi: 24.1 }, // Normal weight
-        { date: "2024-09-12", weight: 26, height: 123, bmi: 17.2 }, // Underweight
-        { date: "2024-10-19", weight: 34, height: 128, bmi: 20.8 }, // Normal weight
-        { date: "2024-11-26", weight: 50, height: 135, bmi: 27.4 }, // Overweight
-        { date: "2024-12-03", weight: 22, height: 121, bmi: 14.9 }, // Underweight
-        { date: "2025-01-20", weight: 36, height: 129, bmi: 21.6 }, // Normal weight
-        { date: "2025-02-25", weight: 60, height: 139, bmi: 31.1 }, // Overweight
-        { date: "2025-03-02", weight: 28, height: 125, bmi: 18.5 }, // Normal weight
-        { date: "2025-04-08", weight: 62, height: 140, bmi: 31.6 }, // Overweight
-        { date: "2025-05-15", weight: 40, height: 131, bmi: 23.2 }, // Normal weight
-        { date: "2025-06-22", weight: 67, height: 142, bmi: 33.3 }, // Overweight
-        { date: "2025-07-29", weight: 29, height: 125, bmi: 18.5 }, // Normal weight
-        { date: "2025-08-05", weight: 45, height: 133, bmi: 25.4 }, // Overweight
-        { date: "2025-09-12", weight: 32, height: 127, bmi: 19.8 }, // Normal weight
-        { date: "2025-10-19", weight: 52, height: 136, bmi: 28.1 }, // Overweight
-        { date: "2025-11-26", weight: 26, height: 123, bmi: 17.2 }, // Underweight
-        { date: "2025-12-03", weight: 70, height: 143, bmi: 34.2 }, // Overweight
-    ]);
-
+    const params = useParams();
+    const { id } = params; // Get child ID from the URL
+    const [childDetail, setChildDetail] = useState<Child | null>(null);
+    const [entries, setEntries] = useState<Metric[]>([]);
     const [activeTab, setActiveTab] = useState("bmi");
-    const years = [
-        ...new Set(entries.map((entry) => entry.date.split("-")[0])),
-    ];
-    const [selectedYear, setSelectedYear] = useState(years[0]);
+    const [selectedYear, setSelectedYear] = useState("");
+
+    useEffect(() => {
+        if (id && typeof id === "string") {
+            fetchChildDetails(id);
+            fetchChildMetrics(id);
+        }
+    }, [id]);
+
+    const fetchChildDetails = async (childId: string) => {
+        try {
+            const childData = await childApi.getChildById(BigInt(childId));
+            setChildDetail(childData);
+        } catch (error) {
+            console.error("Error fetching child details:", error);
+        }
+    };
+
+    const fetchChildMetrics = async (childId: string) => {
+        try {
+            const metrics = await metricApi.getMetricsByChildId(BigInt(childId));
+            setEntries(metrics);
+            if (metrics.length > 0) {
+                const years = [
+                    ...new Set(metrics.map((entry) => entry.recordedDate.getFullYear().toString())),
+                ];
+                setSelectedYear(years[0]);
+            }
+        } catch (error) {
+            console.error("Error fetching child metrics:", error);
+        }
+    };
+
     const filteredEntries = entries.filter((entry) =>
-        entry.date.startsWith(selectedYear)
+        entry.recordedDate.toISOString().startsWith(selectedYear)
     );
 
     const getBmiClass = (bmi: number) => {
@@ -61,7 +70,16 @@ export default function ChildDetailPage() {
         <div>
             <Navbar />
             <div className="min-h-screen bg-gray-900 text-white p-5">
-                <h1 className="text-2xl font-bold">Child Name</h1>
+                <h1 className="text-2xl font-bold">
+                    {childDetail ? childDetail.name : "Loading..."}
+                </h1>
+                <p className="mt-2">Gender: {childDetail?.gender || "N/A"}</p>
+                <p className="mt-2">
+                    Date of Birth:{" "}
+                    {childDetail?.dob
+                        ? new Date(childDetail.dob).toLocaleDateString()
+                        : "N/A"}
+                </p>
                 <div className="mt-5 flex gap-4">
                     <input
                         className="p-2 rounded bg-gray-800"
@@ -98,7 +116,7 @@ export default function ChildDetailPage() {
                                 stroke="#444"
                             />
                             <XAxis
-                                dataKey="date"
+                                dataKey="recordedDate"
                                 stroke="#fff"
                                 tickFormatter={(date) =>
                                     new Date(date).toLocaleDateString("en-US", {
@@ -130,7 +148,7 @@ export default function ChildDetailPage() {
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(e.target.value)}
                         >
-                            {years.map((year) => (
+                            {[...new Set(entries.map((entry) => entry.recordedDate.getFullYear().toString()))].map((year) => (
                                 <option key={year} value={year}>
                                     {year}
                                 </option>
@@ -155,7 +173,7 @@ export default function ChildDetailPage() {
                                     entry.bmi
                                 )}`}
                             >
-                                <td className="p-2">{entry.date}</td>
+                                <td className="p-2">{entry.recordedDate.toLocaleDateString()}</td>
                                 <td className="p-2">{entry.weight}</td>
                                 <td className="p-2">{entry.height}</td>
                                 <td className="p-2">{entry.bmi}</td>
