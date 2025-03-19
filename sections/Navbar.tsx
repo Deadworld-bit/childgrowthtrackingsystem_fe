@@ -17,13 +17,18 @@ const navLinks = [
 
 export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null); // Initially null to indicate loading
+    const [userRole, setUserRole] = useState<string | null>(null); // State to store user role
     const router = useRouter();
 
     useEffect(() => {
         const user = Cookies.get("user");
         if (user) {
             setIsLoggedIn(true);
+            const parsedUser = JSON.parse(user);
+            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
+        } else {
+            setIsLoggedIn(false);
         }
     }, []);
 
@@ -82,7 +87,10 @@ export default function Navbar() {
                                     <line x1="3" y1="18" x2="21" y2="18"></line>
                                 </svg>
                             </button>
-                            {isLoggedIn ? (
+                            {isLoggedIn === null ? (
+                                // Placeholder while determining login state
+                                <div className="hidden md:inline-flex items-center w-20 h-8 bg-gray-700 rounded animate-pulse"></div>
+                            ) : isLoggedIn ? (
                                 <Button
                                     variant="secondary"
                                     className="hidden md:inline-flex items-center"
@@ -100,7 +108,7 @@ export default function Navbar() {
                                             Log In
                                         </Button>
                                     </Link>
-                                    <Link href="/SIgnUp">
+                                    <Link href="/SignUp">
                                         <Button
                                             variant="primary"
                                             className="hidden md:inline-flex items-center"
@@ -136,24 +144,36 @@ export default function Navbar() {
                         ✕
                     </button>
                     <nav className="flex flex-col mt-16 space-y-4 text-white px-6">
-                        <a
-                            href="/user"
-                            className="py-2 text-lg font-semibold hover:text-gray-300"
-                        >
-                            User
-                        </a>
-                        <a
-                            href="/child"
-                            className="py-2 text-lg font-semibold hover:text-gray-300"
-                        >
-                            Child
-                        </a>
-                        <a
-                            href="#"
-                            className="py-2 text-lg font-semibold hover:text-gray-300"
-                        >
-                            About
-                        </a>
+                        {userRole === "ADMIN" && (
+                            <>
+                                <a
+                                    href="/user"
+                                    className="py-2 text-lg font-semibold hover:text-gray-300"
+                                >
+                                    User
+                                </a>
+                                <a
+                                    href="/child"
+                                    className="py-2 text-lg font-semibold hover:text-gray-300"
+                                >
+                                    Child
+                                </a>
+                                <a
+                                    href="/reports"
+                                    className="py-2 text-lg font-semibold hover:text-gray-300"
+                                >
+                                    Reports
+                                </a>
+                            </>
+                        )}
+                        {(userRole === "DOCTOR" || userRole === "MEMBER") && (
+                            <a
+                                href="/child"
+                                className="py-2 text-lg font-semibold hover:text-gray-300"
+                            >
+                                Child
+                            </a>
+                        )}
                     </nav>
                 </div>
 

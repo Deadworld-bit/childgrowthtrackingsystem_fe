@@ -46,11 +46,10 @@ const getChildById = async (id: BigInt): Promise<Child> => {
     }
 };
 
-// Fetch child by Parent ID
-const getChildByParentId = async (parentId: BigInt): Promise<Child> => {
+const getChildByParentId = async (parentId: BigInt): Promise<Child[]> => {
     try {
-        const response = await api.get<Child>(`/child/findByParentId/${parentId}`);
-        return response.data;
+        const response = await api.get<{ status: string; message: string; data: Child[] }>(`/child/findByParentId/${parentId}`);
+        return response.data.data;
     } catch (error) {
         console.error(`Error fetching child with Parent ID ${parentId}:`, error);
         throw error;
@@ -71,8 +70,8 @@ const createChild = async (childData: Omit<Child, "id" | "createDate" | "updateD
 // Update a child
 const updateChild = async (id: BigInt, childData: Partial<Child>): Promise<Child> => {
     try {
-        const response = await api.put<Child>(`/child/update/${id}`, childData);
-        return response.data;
+        const response = await api.put<{ status: string; message: string; data: Child }>(`/child/update/${id}`,childData);
+        return response.data.data;
     } catch (error) {
         console.error(`Error updating child with ID ${id}:`, error);
         throw error;

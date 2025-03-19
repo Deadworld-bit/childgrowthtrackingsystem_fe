@@ -9,6 +9,7 @@ import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
 import CreateModal from "./modals/createModal"; // Import CreateModal
 import childApi, { Child } from "@/app/api/child";
+import Cookies from "js-cookie";
 
 const USERS_PER_PAGE = 9;
 
@@ -26,19 +27,39 @@ export default function ChildPage() {
     const [isLoading, setIsLoading] = useState(true); // Loading state
     const [successMessage, setSuccessMessage] = useState<string | null>(null); // Success message state
     const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null); // State to store user ID
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
+
+    // Fetch user's role and ID from cookies
+    useEffect(() => {
+        const user = Cookies.get("user");
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
+            setUserId(parsedUser.id); // Assuming the user object has an `id` property
+        }
+        setIsRoleLoading(false); // Role check is complete
+    }, []);
 
     useEffect(() => {
         fetchChildren();
-    }, [filter]);
+    }, [filter, userRole, userId]);
 
-    // Fetch children from API based on filter
     const fetchChildren = async () => {
         setIsLoading(true);
         try {
-            const data =
-                filter === "haveDoctor"
-                    ? await childApi.getChildHaveDoctor()
-                    : await childApi.getChildDontHaveDoctor();
+            let data: Child[] = [];
+            if (userRole === "ADMIN") {
+                // ADMIN fetches children based on filter
+                data =
+                    filter === "haveDoctor"
+                        ? await childApi.getChildHaveDoctor()
+                        : await childApi.getChildDontHaveDoctor();
+            } else if (userRole === "MEMBER" && userId) {
+                // MEMBER fetches children by parent ID
+                data = await childApi.getChildByParentId(BigInt(userId));
+            }
             setChildren(data);
         } catch (error) {
             console.error("Error fetching children:", error);
@@ -94,7 +115,7 @@ export default function ChildPage() {
             setChildren([...children, newChild]);
             setSuccessMessage("Child created successfully!");
             closeCreateModal();
-            setTimeout(() => setSuccessMessage(null), 3000); 
+            setTimeout(() => setSuccessMessage(null), 3000);
         } catch (error) {
             console.error("Error creating child:", error);
         }
@@ -127,15 +148,17 @@ export default function ChildPage() {
     const saveChanges = async () => {
         if (editingChild) {
             try {
+                const updatedChildData = {
+                    name: editingChild.name,
+                    dob: editingChild.dob,
+                    gender: editingChild.gender,
+                };
+    
                 const updatedChild = await childApi.updateChild(
                     editingChild.id,
-                    {
-                        name: editingChild.name,
-                        dob: editingChild.dob,
-                        gender: editingChild.gender,
-                        parentId: editingChild.parentId,
-                    }
+                    updatedChildData
                 );
+    
                 setChildren(
                     children.map((child) =>
                         child.id === updatedChild.id ? updatedChild : child
@@ -143,7 +166,7 @@ export default function ChildPage() {
                 );
                 setSuccessMessage("Child updated successfully!");
                 closeEditModal();
-                setTimeout(() => setSuccessMessage(null), 3000); 
+                setTimeout(() => setSuccessMessage(null), 3000);
             } catch (error) {
                 console.error("Error updating child:", error);
             }
@@ -179,6 +202,32 @@ export default function ChildPage() {
         }
     };
 
+    if (isRoleLoading) {
+        // Show a loading spinner or placeholder while determining the user's role
+        return (
+            <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
+                <h1 className="text-3xl font-bold mb-4">Loading...</h1>
+            </div>
+        );
+    }
+
+    if (userRole !== "ADMIN" && userRole !== "MEMBER" && userRole !== "DOCTOR") {
+        return (
+            <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
+                <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+                <p className="text-lg">
+                    You're not allowed to use this function.
+                </p>
+                <Link
+                    className="text-sm text-blue-400 hover:underline block text-right mt-1"
+                    href="./"
+                >
+                    Return Home
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div
             className="flex flex-col min-h-screen text-white"
@@ -201,24 +250,29 @@ export default function ChildPage() {
 
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex gap-4">
-                        <button
-                            onClick={openCreateModal}
-                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
-                        >
-                            <FaPlus /> Create New Child
-                        </button>
-                        <select
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="haveDoctor">
-                                Children with Doctor
-                            </option>
-                            <option value="dontHaveDoctor">
-                                Children without Doctor
-                            </option>
-                        </select>
+                        {/* Hide Create Button for DOCTOR */}
+                        {userRole !== "DOCTOR" && (
+                            <button
+                                onClick={openCreateModal}
+                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
+                            >
+                                <FaPlus /> Create New Child
+                            </button>
+                        )}
+                        {userRole === "ADMIN" && (
+                            <select
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="haveDoctor">
+                                    Children with Doctor
+                                </option>
+                                <option value="dontHaveDoctor">
+                                    Children without Doctor
+                                </option>
+                            </select>
+                        )}
                     </div>
                     <input
                         type="text"
@@ -304,26 +358,33 @@ export default function ChildPage() {
                                                             : "N/A"}
                                                     </td>
                                                     <td className="p-4 flex gap-3">
-                                                        <button
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    child
-                                                                )
-                                                            }
-                                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
-                                                        >
-                                                            <FaEdit /> Update
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    child
-                                                                )
-                                                            }
-                                                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
-                                                        >
-                                                            <FaTrash /> Delete
-                                                        </button>
+                                                        {/* Hide Update and Delete Buttons for DOCTOR */}
+                                                        {userRole !== "DOCTOR" && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            child
+                                                                        )
+                                                                    }
+                                                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                                                                >
+                                                                    <FaEdit />{" "}
+                                                                    Update
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            child
+                                                                        )
+                                                                    }
+                                                                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                                                                >
+                                                                    <FaTrash />{" "}
+                                                                    Delete
+                                                                </button>
+                                                            </>
+                                                        )}
                                                         <Link
                                                             href={`/child/detail/${child.id}`}
                                                         >
