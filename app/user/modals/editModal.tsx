@@ -1,17 +1,41 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface EditModalProps {
   isOpen: boolean;
-  user: { id: BigInt; userName: string; email: string, role: string, membership: string};
+  user: { id: BigInt; username: string; email: string, role: string, membership: string} | null;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   closeEditModal: () => void;
   saveChanges: () => void;
 }
 
 const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, closeEditModal, saveChanges }) => {
-  if (!isOpen) return null;
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      validateEmail(user.email);
+    }
+  }, [user?.email]);
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Invalid email format");
+    } else {
+      setEmailError(null);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    handleChange(e);
+    if (e.target.name === "email") {
+      validateEmail(e.target.value);
+    }
+  };
+
+  if (!isOpen || !user) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
@@ -22,9 +46,9 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <label className="block text-sm">Name</label>
           <input
             type="text"
-            name="userName"
-            value={user.userName}
-            onChange={handleChange}
+            name="username"
+            value={user.username}
+            onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -35,9 +59,10 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
             type="email"
             name="email"
             value={user.email}
-            onChange={handleChange}
+            onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
         </div>
 
         <div className="mb-4">
@@ -45,7 +70,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <select
             name="role"
             value={user.role}
-            onChange={handleChange}
+            onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="DOCTOR">DOCTOR</option>
@@ -59,7 +84,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <select
             name="membership"
             value={user.membership}
-            onChange={handleChange}
+            onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="BASIC">BASIC</option>
@@ -77,6 +102,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           <button
             onClick={saveChanges}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            disabled={!!emailError} // Disable save button if email is invalid
           >
             Save
           </button>

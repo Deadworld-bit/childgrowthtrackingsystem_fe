@@ -8,7 +8,7 @@ import logoImage from "@/assets/images/logo.svg";
 
 const Footer = () => {
   return (
-    <footer className="flexCenter mb-24 bg-black py-24 text-white">
+    <footer className="flexCenter py-12 text-white" style={{ background: "linear-gradient(to right, #1e1e1e, #2c2c2c)" }}>
       <div className="padding-container max-container flex w-full flex-col gap-14">
         <div className="flex flex-col items-start justify-center gap-[10%] md:flex-row">
           <Link href="/" className="mb-10">
@@ -59,7 +59,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border bg-[#FFD166]" />
+        <div className="border-t border-gray-600" />
         <p className="regular-14 w-full text-center text-white">2025 Deadworld | All rights reserved</p>
       </div>
     </footer>

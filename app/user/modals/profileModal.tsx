@@ -19,7 +19,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, user, closeModal })
                 </div>
                 <div className="flex flex-col items-center">
                     <img src="/neutral.png" alt="Avatar" className="w-24 h-24 rounded-full mb-4 border-2 border-gray-600" />
-                    <p className="mb-2"><strong>Name:</strong> {user.userName}</p>
+                    <p className="mb-2"><strong>Name:</strong> {user.username}</p>
                     <p className="mb-2"><strong>Email:</strong> {user.email}</p>
                     <p className="mb-2"><strong>Role:</strong> {user.role}</p>
                     <p className="mb-2"><strong>Membership:</strong> {user.membership}</p>

@@ -3,8 +3,9 @@ import api from ".";
 // Define User type
 export interface User {
     id: BigInt;
-    userName: string;
+    username: string;
     email: string;
+    password:string;
     role: string;
     membership: string;
     createdDate: Date;
@@ -59,8 +60,8 @@ const getUserById = async (id: string): Promise<User> => {
 // Update a user
 const updateUser = async (id: BigInt, userData: Partial<User>): Promise<User> => {
     try {
-        const response = await api.put<User>(`/users/${id}`, userData);
-        return response.data;
+        const response = await api.put<{ status: string; message: string; data: User }>(`/users/${id}`, userData);
+        return response.data.data;
     } catch (error) {
         console.error(`Error updating user with ID ${id}:`, error);
         throw error;
@@ -70,7 +71,7 @@ const updateUser = async (id: BigInt, userData: Partial<User>): Promise<User> =>
 // Delete a user
 const deleteUser = async (id: BigInt): Promise<void> => {
     try {
-        await api.put(`/users/${id}`);
+        await api.put(`/users/delete/${id}`);
     } catch (error) {
         console.error(`Error deleting user with ID ${id}:`, error);
         throw error;

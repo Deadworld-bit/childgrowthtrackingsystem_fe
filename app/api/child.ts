@@ -38,7 +38,7 @@ const getChildDontHaveDoctor = async (): Promise<Child[]> => {
 // Fetch child by ID
 const getChildById = async (id: BigInt): Promise<Child> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child }>(`/child/${id}`);
+        const response = await api.get<{ status: string; message: string; data: Child }>(`/child/findById/${id}`);
         return response.data.data;
     } catch (error) {
         console.error(`Error fetching child with ID ${id}:`, error);
@@ -82,7 +82,7 @@ const updateChild = async (id: BigInt, childData: Partial<Child>): Promise<Child
 // Delete a child
 const deleteChild = async (id: BigInt): Promise<void> => {
     try {
-        await api.delete(`/child/delete/${id}`);
+        await api.put(`/child/delete/${id}`);
     } catch (error) {
         console.error(`Error deleting child with ID ${id}:`, error);
         throw error;

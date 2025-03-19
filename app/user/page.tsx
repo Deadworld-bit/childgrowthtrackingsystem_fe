@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FaEdit, FaTrash, FaInfoCircle, FaUserMd } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import EditModal from "./modals/editModal";
@@ -26,6 +27,7 @@ export default function UserPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [userType, setUserType] = useState("members"); // New state to track user type
     const [isLoading, setIsLoading] = useState(true); // Loading state
+    const [successMessage, setSuccessMessage] = useState<string | null>(null); // Success message state
 
     // Fetch users when component mounts or userType changes
     useEffect(() => {
@@ -61,8 +63,8 @@ export default function UserPage() {
     const startIndex = (currentPage - 1) * USERS_PER_PAGE;
     const filteredUsers = users.filter(
         (user) =>
-            (user.userName &&
-                user.userName
+            (user.username &&
+                user.username
                     .toLowerCase()
                     .includes(searchQuery.toLowerCase())) ||
             (user.email &&
@@ -111,7 +113,9 @@ export default function UserPage() {
                         user.id === updatedUser.id ? updatedUser : user
                     )
                 );
+                setSuccessMessage("User updated successfully!");
                 closeEditModal();
+                setTimeout(() => setSuccessMessage(null), 3000); // Clear the message after 3 seconds
             } catch (error) {
                 console.error("Error updating user:", error);
             }
@@ -134,7 +138,9 @@ export default function UserPage() {
             try {
                 await userApi.deleteUser(deletingUser.id);
                 setUsers(users.filter((user) => user.id !== deletingUser.id));
+                setSuccessMessage("User banned successfully!");
                 closeDeleteModal();
+                setTimeout(() => setSuccessMessage(null), 3000); // Clear the message after 3 seconds
             } catch (error) {
                 console.error("Error deleting user:", error);
             }
@@ -155,7 +161,17 @@ export default function UserPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-black text-white">
+        <div
+        className="flex flex-col min-h-screen text-white"
+        style={{
+            background: "linear-gradient(to bottom, #1e1e1e, #121212)",
+            backgroundImage: "url('/parttern.jpg')",
+            backgroundSize: "cover", 
+            backgroundRepeat: "no-repeat", 
+            backgroundPosition: "center", 
+            backgroundBlendMode: "overlay",
+            }}
+        >
             {/* Navbar */}
             <Navbar />
             <main className="flex-grow px-4 md:px-8 lg:px-16">
@@ -184,6 +200,12 @@ export default function UserPage() {
                         className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
+
+                {successMessage && (
+                    <div className="mb-4 p-4 bg-green-500 text-white rounded-lg">
+                        {successMessage}
+                    </div>
+                )}
 
                 <div className="overflow-x-auto">
                     {isLoading ? (
@@ -220,7 +242,7 @@ export default function UserPage() {
                                                 <td className="p-4">
                                                     {startIndex + index + 1}
                                                 </td>
-                                                <td className="p-4">{user.userName}</td>
+                                                <td className="p-4">{user.username}</td>
                                                 <td className="p-4">{user.membership}</td>
                                                 <td className="p-4">
                                                     {user.createdDate
@@ -233,30 +255,30 @@ export default function UserPage() {
                                                 <td className="p-4 flex gap-3">
                                                     <button
                                                         onClick={() => openEditModal(user)}
-                                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
                                                     >
-                                                        Update
+                                                        <FaEdit /> Update
                                                     </button>
                                                     <button
                                                         onClick={() =>
                                                             openDeleteModal(user)
                                                         }
-                                                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
                                                     >
-                                                        Ban
+                                                        <FaTrash /> Ban
                                                     </button>
                                                     <button
                                                         onClick={() => fetchUserById(user.id.toString())}
-                                                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                                                        className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2"
                                                     >
-                                                        Detail
+                                                        <FaInfoCircle /> Detail
                                                     </button>
                                                     {userType === "doctors" && (
                                                         <button
                                                             onClick={() => openSpecializationModal(user.specialization, user.certificate)}
-                                                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                                                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
                                                         >
-                                                            Specialization
+                                                            <FaUserMd /> Specialization
                                                         </button>
                                                     )}
                                                 </td>

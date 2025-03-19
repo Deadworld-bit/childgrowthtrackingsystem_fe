@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FaEdit, FaTrash, FaInfoCircle, FaPlus } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import Link from "next/link";
@@ -22,6 +23,8 @@ export default function ChildPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [filter, setFilter] = useState("haveDoctor"); // New state for filter
+    const [isLoading, setIsLoading] = useState(true); // Loading state
+    const [successMessage, setSuccessMessage] = useState<string | null>(null); // Success message state
     const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
 
     useEffect(() => {
@@ -30,6 +33,7 @@ export default function ChildPage() {
 
     // Fetch children from API based on filter
     const fetchChildren = async () => {
+        setIsLoading(true);
         try {
             const data =
                 filter === "haveDoctor"
@@ -39,6 +43,8 @@ export default function ChildPage() {
         } catch (error) {
             console.error("Error fetching children:", error);
             setChildren([]); // Set children to an empty array in case of error
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -86,7 +92,9 @@ export default function ChildPage() {
         try {
             const newChild = await childApi.createChild(creatingChild as Child);
             setChildren([...children, newChild]);
+            setSuccessMessage("Child created successfully!");
             closeCreateModal();
+            setTimeout(() => setSuccessMessage(null), 3000); 
         } catch (error) {
             console.error("Error creating child:", error);
         }
@@ -133,7 +141,9 @@ export default function ChildPage() {
                         child.id === updatedChild.id ? updatedChild : child
                     )
                 );
+                setSuccessMessage("Child updated successfully!");
                 closeEditModal();
+                setTimeout(() => setSuccessMessage(null), 3000); 
             } catch (error) {
                 console.error("Error updating child:", error);
             }
@@ -160,7 +170,9 @@ export default function ChildPage() {
                 setChildren(
                     children.filter((child) => child.id !== deletingChild.id)
                 );
+                setSuccessMessage("Child deleted successfully!");
                 closeDeleteModal();
+                setTimeout(() => setSuccessMessage(null), 3000);
             } catch (error) {
                 console.error("Error deleting child:", error);
             }
@@ -168,7 +180,17 @@ export default function ChildPage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-black text-white">
+        <div
+            className="flex flex-col min-h-screen text-white"
+            style={{
+                background: "linear-gradient(to bottom, #1e1e1e, #121212)",
+                backgroundImage: "url('/parttern.jpg')",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundBlendMode: "overlay",
+            }}
+        >
             {/* Navbar */}
             <Navbar />
 
@@ -181,9 +203,9 @@ export default function ChildPage() {
                     <div className="flex gap-4">
                         <button
                             onClick={openCreateModal}
-                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
                         >
-                            Create New Child
+                            <FaPlus /> Create New Child
                         </button>
                         <select
                             value={filter}
@@ -207,81 +229,124 @@ export default function ChildPage() {
                     />
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full table-auto border border-gray-600 bg-[#1E1E1E] shadow-lg">
-                        <thead className="bg-gray-800 text-white text-lg">
-                            <tr>
-                                <th className="p-4 text-left w-[5%]">#</th>
-                                <th className="p-4 text-left w-[20%]">Name</th>
-                                <th className="p-4 text-left w-[15%]">DOB</th>
-                                <th className="p-4 text-left w-[10%]">
-                                    Gender
-                                </th>
-                                <th className="p-4 text-left w-[20%]">
-                                    Parent's Name
-                                </th>
-                                <th className="p-4 text-left w-[15%]">
-                                    Created Date
-                                </th>
-                                <th className="p-4 text-left w-[15%]">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
+                {successMessage && (
+                    <div className="mb-4 p-4 bg-green-500 text-white rounded-lg">
+                        {successMessage}
+                    </div>
+                )}
 
-                        <tbody className="text-white text-lg">
-                            {displayedChildren.map((child, index) => (
-                                <tr
-                                    key={child.id.toString()}
-                                    className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
-                                >
-                                    <td className="p-4">
-                                        {startIndex + index + 1}
-                                    </td>
-                                    <td className="p-4">{child.name}</td>
-                                    <td className="p-4">
-                                        {child.dob
-                                            ? new Date(
-                                                  child.dob
-                                              ).toLocaleDateString()
-                                            : "N/A"}
-                                    </td>
-                                    <td className="p-4">{child.gender}</td>
-                                    <td className="p-4">{child.parentName}</td>
-                                    <td className="p-4">
-                                        {child.createDate
-                                            ? new Date(
-                                                  child.createDate
-                                              ).toLocaleDateString()
-                                            : "N/A"}
-                                    </td>
-                                    <td className="p-4 flex gap-3">
-                                        <button
-                                            onClick={() => openEditModal(child)}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                                        >
-                                            Update
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                openDeleteModal(child)
-                                            }
-                                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                        >
-                                            Delete
-                                        </button>
-                                        <Link
-                                            href={`/child/detail/${child.id}`}
-                                        >
-                                            <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                                                Detail
-                                            </button>
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="overflow-x-auto">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="loader"></div>
+                        </div>
+                    ) : (
+                        <>
+                            {displayedChildren.length > 0 ? (
+                                <table className="w-full table-auto border border-gray-600 bg-[#1E1E1E] shadow-lg">
+                                    <thead className="bg-gray-800 text-white text-lg">
+                                        <tr>
+                                            <th className="p-4 text-left w-[5%]">
+                                                #
+                                            </th>
+                                            <th className="p-4 text-left w-[20%]">
+                                                Name
+                                            </th>
+                                            <th className="p-4 text-left w-[15%]">
+                                                DOB
+                                            </th>
+                                            <th className="p-4 text-left w-[10%]">
+                                                Gender
+                                            </th>
+                                            <th className="p-4 text-left w-[20%]">
+                                                Parent's Name
+                                            </th>
+                                            <th className="p-4 text-left w-[15%]">
+                                                Created Date
+                                            </th>
+                                            <th className="p-4 text-left w-[15%]">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody className="text-white text-lg">
+                                        {displayedChildren.map(
+                                            (child, index) => (
+                                                <tr
+                                                    key={child.id.toString()}
+                                                    className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
+                                                >
+                                                    <td className="p-4">
+                                                        {startIndex + index + 1}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.name}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.dob
+                                                            ? new Date(
+                                                                  child.dob
+                                                              ).toLocaleDateString()
+                                                            : "N/A"}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.gender}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.parentName}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.createDate
+                                                            ? new Date(
+                                                                  child.createDate
+                                                              ).toLocaleDateString()
+                                                            : "N/A"}
+                                                    </td>
+                                                    <td className="p-4 flex gap-3">
+                                                        <button
+                                                            onClick={() =>
+                                                                openEditModal(
+                                                                    child
+                                                                )
+                                                            }
+                                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
+                                                        >
+                                                            <FaEdit /> Update
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                openDeleteModal(
+                                                                    child
+                                                                )
+                                                            }
+                                                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                                                        >
+                                                            <FaTrash /> Delete
+                                                        </button>
+                                                        <Link
+                                                            href={`/child/detail/${child.id}`}
+                                                        >
+                                                            <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2">
+                                                                <FaInfoCircle />{" "}
+                                                                Detail
+                                                            </button>
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="flex justify-center items-center h-64">
+                                    <p className="text-lg">
+                                        No children found.
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
                 {/* Pagination Controls */}
                 <div className="flex justify-center items-center mt-6 gap-4">

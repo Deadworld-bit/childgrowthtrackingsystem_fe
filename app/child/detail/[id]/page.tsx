@@ -15,14 +15,24 @@ import {
 } from "recharts";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
+import DeleteMetricModal from "@/app/child/modals/deleteMetricModal";
+import { FaTrash } from "react-icons/fa";
 
 export default function ChildDetailPage() {
     const params = useParams();
-    const { id } = params; // Get child ID from the URL
+    const { id } = params; 
     const [childDetail, setChildDetail] = useState<Child | null>(null);
     const [entries, setEntries] = useState<Metric[]>([]);
     const [activeTab, setActiveTab] = useState("bmi");
     const [selectedYear, setSelectedYear] = useState("");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deletingMetric, setDeletingMetric] = useState<Metric | null>(null);
+
+    // New state variables for form inputs
+    const [newWeight, setNewWeight] = useState("");
+    const [newHeight, setNewHeight] = useState("");
+    const [newRecordedDate, setNewRecordedDate] = useState("");
+    const [successMessage, setSuccessMessage] = useState(""); // For success notifications
 
     useEffect(() => {
         if (id && typeof id === "string") {
@@ -43,15 +53,69 @@ export default function ChildDetailPage() {
     const fetchChildMetrics = async (childId: string) => {
         try {
             const metrics = await metricApi.getMetricsByChildId(BigInt(childId));
-            setEntries(metrics);
-            if (metrics.length > 0) {
+            const parsedMetrics = metrics.map((metric) => ({
+                ...metric,
+                recordedDate: new Date(metric.recordedDate),
+            }));
+            setEntries(parsedMetrics);
+            if (parsedMetrics.length > 0) {
                 const years = [
-                    ...new Set(metrics.map((entry) => entry.recordedDate.getFullYear().toString())),
+                    ...new Set(parsedMetrics.map((entry) => entry.recordedDate.getFullYear().toString())),
                 ];
                 setSelectedYear(years[0]);
             }
         } catch (error) {
             console.error("Error fetching child metrics:", error);
+        }
+    };
+
+    const openDeleteModal = (metric: Metric) => {
+        setDeletingMetric(metric);
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setDeletingMetric(null);
+    };
+
+    const handleDelete = async () => {
+        if (deletingMetric) {
+            try {
+                await metricApi.deleteMetric(deletingMetric.id);
+                setEntries(entries.filter((entry) => entry.id !== deletingMetric.id));
+                closeDeleteModal();
+            } catch (error) {
+                console.error("Error deleting metric:", error);
+            }
+        }
+    };
+
+    // Updated function to handle creating a metric and display a success message
+    const handleAddEntry = async () => {
+        if (!newWeight || !newHeight || !newRecordedDate) {
+            alert("Please fill in all fields");
+            return;
+        }
+        try {
+            const metricData = {
+                weight: parseFloat(newWeight),
+                height: parseFloat(newHeight),
+                recordedDate: new Date(newRecordedDate),
+                // Convert child ID from string to BigInt to match API expectations
+                childId: typeof id === "string" ? id : "",
+            };
+            const createdMetric = await metricApi.createMetric(metricData);
+            // Convert the returned recordedDate to a Date object
+            createdMetric.recordedDate = new Date(createdMetric.recordedDate);
+            setEntries([...entries, createdMetric]);
+            setSuccessMessage("Metric added successfully!");
+            setNewWeight("");
+            setNewHeight("");
+            setNewRecordedDate("");
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } catch (error) {
+            console.error("Error creating metric:", error);
         }
     };
 
@@ -82,17 +146,36 @@ export default function ChildDetailPage() {
                 </p>
                 <div className="mt-5 flex gap-4">
                     <input
+                        type="number"
                         className="p-2 rounded bg-gray-800"
                         placeholder="Height (cm)"
+                        value={newHeight}
+                        onChange={(e) => setNewHeight(e.target.value)}
                     />
                     <input
+                        type="number"
                         className="p-2 rounded bg-gray-800"
                         placeholder="Weight (kg)"
+                        value={newWeight}
+                        onChange={(e) => setNewWeight(e.target.value)}
                     />
-                    <button className="p-2 bg-blue-500 rounded">
+                    <input
+                        type="date"
+                        className="p-2 rounded bg-gray-800"
+                        placeholder="Date"
+                        value={newRecordedDate}
+                        onChange={(e) => setNewRecordedDate(e.target.value)}
+                    />
+                    <button
+                        onClick={handleAddEntry}
+                        className="p-2 bg-blue-500 rounded"
+                    >
                         Add Entry
                     </button>
                 </div>
+                {successMessage && (
+                    <div className="mt-2 text-green-500">{successMessage}</div>
+                )}
                 <div className="mt-8 bg-gray-800 p-5 rounded h-72 relative">
                     <div className="flex gap-3 mb-3">
                         {["weight", "height", "bmi"].map((key) => (
@@ -100,9 +183,7 @@ export default function ChildDetailPage() {
                                 key={key}
                                 onClick={() => setActiveTab(key)}
                                 className={`p-2 rounded ${
-                                    activeTab === key
-                                        ? "bg-blue-500"
-                                        : "bg-gray-700"
+                                    activeTab === key ? "bg-blue-500" : "bg-gray-700"
                                 }`}
                             >
                                 {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -111,10 +192,7 @@ export default function ChildDetailPage() {
                     </div>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={filteredEntries}>
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#444"
-                            />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                             <XAxis
                                 dataKey="recordedDate"
                                 stroke="#fff"
@@ -163,6 +241,7 @@ export default function ChildDetailPage() {
                             <th className="p-2">Weight (kg)</th>
                             <th className="p-2">Height (cm)</th>
                             <th className="p-2">BMI</th>
+                            <th className="p-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -173,10 +252,20 @@ export default function ChildDetailPage() {
                                     entry.bmi
                                 )}`}
                             >
-                                <td className="p-2">{entry.recordedDate.toLocaleDateString()}</td>
+                                <td className="p-2">
+                                    {entry.recordedDate.toLocaleDateString()}
+                                </td>
                                 <td className="p-2">{entry.weight}</td>
                                 <td className="p-2">{entry.height}</td>
                                 <td className="p-2">{entry.bmi}</td>
+                                <td className="p-2">
+                                    <button
+                                        onClick={() => openDeleteModal(entry)}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
+                                        <FaTrash />
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -216,6 +305,12 @@ export default function ChildDetailPage() {
                 </div>
             </div>
             <Footer />
+            <DeleteMetricModal
+                isOpen={isDeleteModalOpen}
+                metric={deletingMetric}
+                closeDeleteModal={closeDeleteModal}
+                handleDelete={handleDelete}
+            />
         </div>
     );
 }
