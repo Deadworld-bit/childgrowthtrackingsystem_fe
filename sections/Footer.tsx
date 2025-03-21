@@ -8,7 +8,7 @@ import logoImage from "@/assets/images/logo.svg";
 
 const Footer = () => {
   return (
-    <footer className="flexCenter py-12 text-white" style={{ background: "linear-gradient(to right, #1e1e1e, #2c2c2c)" }}>
+    <footer className="flexCenter py-12 text-white bg-neutral-800">
       <div className="padding-container max-container flex w-full flex-col gap-14">
         <div className="flex flex-col items-start justify-center gap-[10%] md:flex-row">
           <Link href="/" className="mb-10">

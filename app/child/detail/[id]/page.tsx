@@ -20,7 +20,7 @@ import { FaTrash } from "react-icons/fa";
 
 export default function ChildDetailPage() {
     const params = useParams();
-    const { id } = params; 
+    const { id } = params;
     const [childDetail, setChildDetail] = useState<Child | null>(null);
     const [entries, setEntries] = useState<Metric[]>([]);
     const [activeTab, setActiveTab] = useState("bmi");
@@ -33,6 +33,44 @@ export default function ChildDetailPage() {
     const [newHeight, setNewHeight] = useState("");
     const [newRecordedDate, setNewRecordedDate] = useState("");
     const [successMessage, setSuccessMessage] = useState(""); // For success notifications
+
+    // State for posts
+    const [posts, setPosts] = useState([
+        {
+            id: 1,
+            author: "Dr. John Doe",
+            role: "Doctor",
+            content:
+                "Ensure your child gets enough sleep and eats a balanced diet.",
+            createdAt: new Date().toISOString(),
+        },
+        {
+            id: 2,
+            author: "Jane Smith",
+            role: "Parent",
+            content:
+                "Using this app has helped me monitor my child's progress easily.",
+            createdAt: new Date().toISOString(),
+        },
+    ]);
+    const [newPostContent, setNewPostContent] = useState("");
+    const [selectedYearPost, setSelectedYearPost] = useState("");
+
+    const handleCreatePost = () => {
+        if (!newPostContent.trim()) {
+            alert("Please write something before posting.");
+            return;
+        }
+        const newPost = {
+            id: posts.length + 1,
+            author: "Current User", // Replace with logged-in user's name
+            role: "Parent", // Replace with logged-in user's role
+            content: newPostContent,
+            createdAt: new Date().toISOString(),
+        };
+        setPosts([newPost, ...posts]);
+        setNewPostContent("");
+    };
 
     useEffect(() => {
         if (id && typeof id === "string") {
@@ -52,7 +90,9 @@ export default function ChildDetailPage() {
 
     const fetchChildMetrics = async (childId: string) => {
         try {
-            const metrics = await metricApi.getMetricsByChildId(BigInt(childId));
+            const metrics = await metricApi.getMetricsByChildId(
+                BigInt(childId)
+            );
             const parsedMetrics = metrics.map((metric) => ({
                 ...metric,
                 recordedDate: new Date(metric.recordedDate),
@@ -60,7 +100,11 @@ export default function ChildDetailPage() {
             setEntries(parsedMetrics);
             if (parsedMetrics.length > 0) {
                 const years = [
-                    ...new Set(parsedMetrics.map((entry) => entry.recordedDate.getFullYear().toString())),
+                    ...new Set(
+                        parsedMetrics.map((entry) =>
+                            entry.recordedDate.getFullYear().toString()
+                        )
+                    ),
                 ];
                 setSelectedYear(years[0]);
             }
@@ -83,7 +127,9 @@ export default function ChildDetailPage() {
         if (deletingMetric) {
             try {
                 await metricApi.deleteMetric(deletingMetric.id);
-                setEntries(entries.filter((entry) => entry.id !== deletingMetric.id));
+                setEntries(
+                    entries.filter((entry) => entry.id !== deletingMetric.id)
+                );
                 closeDeleteModal();
             } catch (error) {
                 console.error("Error deleting metric:", error);
@@ -183,7 +229,9 @@ export default function ChildDetailPage() {
                                 key={key}
                                 onClick={() => setActiveTab(key)}
                                 className={`p-2 rounded ${
-                                    activeTab === key ? "bg-blue-500" : "bg-gray-700"
+                                    activeTab === key
+                                        ? "bg-blue-500"
+                                        : "bg-gray-700"
                                 }`}
                             >
                                 {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -192,7 +240,10 @@ export default function ChildDetailPage() {
                     </div>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={filteredEntries}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                            <CartesianGrid
+                                strokeDasharray="3 3"
+                                stroke="#444"
+                            />
                             <XAxis
                                 dataKey="recordedDate"
                                 stroke="#fff"
@@ -226,7 +277,15 @@ export default function ChildDetailPage() {
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(e.target.value)}
                         >
-                            {[...new Set(entries.map((entry) => entry.recordedDate.getFullYear().toString()))].map((year) => (
+                            {[
+                                ...new Set(
+                                    entries.map((entry) =>
+                                        entry.recordedDate
+                                            .getFullYear()
+                                            .toString()
+                                    )
+                                ),
+                            ].map((year) => (
                                 <option key={year} value={year}>
                                     {year}
                                 </option>
@@ -286,21 +345,95 @@ export default function ChildDetailPage() {
                         </span>
                     </p>
                 </div>
+                {/* Posts Section */}
                 <div className="mt-10">
-                    <h2 className="text-xl font-bold mb-4">
-                        Posts from Users and Doctors
-                    </h2>
-                    <div className="bg-gray-800 p-5 rounded mb-4">
-                        <h3 className="text-lg font-semibold">
-                            User Post Title
-                        </h3>
-                        <p className="mt-2">This is a post from a user...</p>
+                    <h2 className="text-xl font-bold mb-4">Community Feed</h2>
+
+                    {/* Filter by Year */}
+                    <div className="flex justify-end mb-4">
+                        <select
+                            className="p-2 bg-gray-700 rounded text-white"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYearPost(e.target.value)}
+                        >
+                            <option value="">All Years</option>
+                            {[
+                                ...new Set(
+                                    posts.map((post) =>
+                                        new Date(post.createdAt).getFullYear()
+                                    )
+                                ),
+                            ].map((year) => (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                    <div className="bg-gray-800 p-5 rounded mb-4">
-                        <h3 className="text-lg font-semibold">
-                            Doctor Post Title
-                        </h3>
-                        <p className="mt-2">This is a post from a doctor...</p>
+
+                    {/* Create New Post */}
+                    <div className="bg-gray-800 p-4 rounded mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold">
+                                U
+                            </div>
+                            <textarea
+                                placeholder="What's on your mind?"
+                                className="flex-1 p-2 rounded bg-gray-700 text-white resize-none"
+                                value={newPostContent}
+                                onChange={(e) =>
+                                    setNewPostContent(e.target.value)
+                                }
+                            ></textarea>
+                        </div>
+                        <div className="flex justify-end mt-2">
+                            <button
+                                onClick={handleCreatePost}
+                                className="px-4 py-2 bg-blue-500 rounded text-white hover:bg-blue-600"
+                            >
+                                Post
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Posts Feed */}
+                    <div className="space-y-6">
+                        {posts
+                            .filter((post) =>
+                                selectedYearPost
+                                    ? new Date(post.createdAt)
+                                          .getFullYear()
+                                          .toString() === selectedYearPost
+                                    : true
+                            )
+                            .map((post) => (
+                                <div
+                                    key={post.id}
+                                    className="bg-gray-800 p-5 rounded shadow-lg hover:shadow-xl transition-shadow duration-300"
+                                >
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold">
+                                            {post.author[0]}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold">
+                                                {post.author}
+                                            </h3>
+                                            <p className="text-sm text-gray-400">
+                                                {post.role}
+                                            </p>
+                                            <span className="text-xs text-gray-500">
+                                                {new Date(
+                                                    post.createdAt
+                                                ).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-300">
+                                        {post.content}
+                                    </p>
+                                </div>
+                            ))}
                     </div>
                 </div>
             </div>

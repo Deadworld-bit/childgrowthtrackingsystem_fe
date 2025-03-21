@@ -17,8 +17,8 @@ const navLinks = [
 
 export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null); // Initially null to indicate loading
-    const [userRole, setUserRole] = useState<string | null>(null); // State to store user role
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -26,7 +26,7 @@ export default function Navbar() {
         if (user) {
             setIsLoggedIn(true);
             const parsedUser = JSON.parse(user);
-            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
+            setUserRole(parsedUser.role);
         } else {
             setIsLoggedIn(false);
         }
@@ -132,44 +132,47 @@ export default function Navbar() {
 
                 {/* Sidebar */}
                 <div
-                    className={`fixed top-0 left-0 h-full w-64 bg-black shadow-lg transform ${
+                    className={`fixed top-0 left-0 h-full w-64 bg-gray-900 shadow-lg transform ${
                         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
                     } transition-transform duration-300 ease-in-out z-50`}
                 >
-                    {/* Improved Close Button */}
+                    {/* Close Button */}
                     <button
                         onClick={() => setIsSidebarOpen(false)}
                         className="absolute top-4 right-4 p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
                     >
                         ✕
                     </button>
-                    <nav className="flex flex-col mt-16 space-y-4 text-white px-6">
+
+                    {/* Sidebar Content */}
+                    <nav className="flex flex-col mt-16 space-y-6 text-white px-6">
                         {userRole === "ADMIN" && (
                             <>
                                 <a
+                                    href="/overview"
+                                    className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
+                                >
+                                    Report
+                                </a>
+                                <a
                                     href="/user"
-                                    className="py-2 text-lg font-semibold hover:text-gray-300"
+                                    className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
                                 >
                                     User
                                 </a>
                                 <a
                                     href="/child"
-                                    className="py-2 text-lg font-semibold hover:text-gray-300"
+                                    className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
                                 >
                                     Child
                                 </a>
-                                <a
-                                    href="/reports"
-                                    className="py-2 text-lg font-semibold hover:text-gray-300"
-                                >
-                                    Reports
-                                </a>
+                                <hr className="border-gray-700 my-4" />
                             </>
                         )}
                         {(userRole === "DOCTOR" || userRole === "MEMBER") && (
                             <a
                                 href="/child"
-                                className="py-2 text-lg font-semibold hover:text-gray-300"
+                                className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
                             >
                                 Child
                             </a>

@@ -5,8 +5,8 @@ import ReviewCard from "@/components/reviewcard";
 
 const Review = () => {
     return (
-        <section className="py-24">
-            <div className="container">
+        <section className="py-24 bg-gradient-to-b from-neutral-700 via-gray-700 to-gray-800 text-white">
+            <div className="container mx-auto px-4">
                 <div className="flex justify-center">
                     <Tag>Review</Tag>
                 </div>

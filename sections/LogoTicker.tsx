@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import quantumLogo from "@/assets/images/quantum.svg";
 import acmeLogo from "@/assets/images/acme-corp.svg";
@@ -25,22 +25,34 @@ const logos = [
 
 export default function LogoTicker() {
     return (
-        <section className="py-24 overflow-x-clip">
+        <section className="py-24 bg-gradient-to-b from-black via-neutral-900 to-neutral-800 text-white">
             <div className="container">
                 <h3 className="text-center text-white/50 text-xl">
                     Already chosen by many hospitals and doctors
                 </h3>
-                <div className="flex overflow-hidden mt-12 [mask-image: linear-gradient(to right, transparent, black_10%, black_90%, transparent)]">
-                    <motion.div animate={{x:"-50%",}} transition={{duration:20, ease:'linear', repeat:Infinity}} className="flex flex-none gap-24 pr-24">
-
+                <div className="flex overflow-hidden mt-12 [mask-image:linear-gradient(to right, transparent, black_10%, black_90%, transparent)]">
+                    <motion.div
+                        animate={{ x: "-50%" }}
+                        transition={{
+                            duration: 20,
+                            ease: "linear",
+                            repeat: Infinity,
+                        }}
+                        className="flex flex-none gap-24 pr-24"
+                    >
                         {Array.from({ length: 2 }).map((_, i) => (
                             <Fragment key={i}>
                                 {logos.map((logo) => (
-                                    <Image
-                                        src={logo.image}
+                                    <div
                                         key={logo.name}
-                                        alt={logo.name}
-                                    />
+                                        className="flex items-center justify-center p-4 bg-neutral-900 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                                    >
+                                        <Image
+                                            src={logo.image}
+                                            alt={logo.name}
+                                            className="w-24 h-auto object-contain"
+                                        />
+                                    </div>
                                 ))}
                             </Fragment>
                         ))}

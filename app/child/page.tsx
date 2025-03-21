@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaInfoCircle, FaPlus } from "react-icons/fa";
+import { FaEdit, FaTrash, FaInfoCircle, FaPlus, FaUserMd } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import Link from "next/link";
 import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
-import CreateModal from "./modals/createModal"; // Import CreateModal
+import CreateModal from "./modals/createModal";
+import SetDoctorModal from "./modals/setDoctorModal"; // Import SetDoctorModal
 import childApi, { Child } from "@/app/api/child";
+import userApi, { User } from "@/app/api/user";
 import Cookies from "js-cookie";
 
 const USERS_PER_PAGE = 9;
@@ -17,29 +19,32 @@ export default function ChildPage() {
     const [children, setChildren] = useState<Child[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State for Create Modal
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isSetDoctorModalOpen, setIsSetDoctorModalOpen] = useState(false); // State for Set Doctor Modal
     const [editingChild, setEditingChild] = useState<Child | null>(null);
     const [deletingChild, setDeletingChild] = useState<Child | null>(null);
-    const [creatingChild, setCreatingChild] = useState<Partial<Child>>({}); // State for new child
+    const [creatingChild, setCreatingChild] = useState<Partial<Child>>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-    const [filter, setFilter] = useState("haveDoctor"); // New state for filter
-    const [isLoading, setIsLoading] = useState(true); // Loading state
-    const [successMessage, setSuccessMessage] = useState<string | null>(null); // Success message state
+    const [filter, setFilter] = useState("haveDoctor");
+    const [isLoading, setIsLoading] = useState(true);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [userId, setUserId] = useState<string | null>(null); // State to store user ID
+    const [userId, setUserId] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
+    const [doctors, setDoctors] = useState<User[]>([]); // State to store doctors
+    const [selectedChild, setSelectedChild] = useState<Child | null>(null); // State to store selected child for setting doctor
 
     // Fetch user's role and ID from cookies
     useEffect(() => {
         const user = Cookies.get("user");
         if (user) {
             const parsedUser = JSON.parse(user);
-            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
-            setUserId(parsedUser.id); // Assuming the user object has an `id` property
+            setUserRole(parsedUser.role);
+            setUserId(parsedUser.id);
         }
-        setIsRoleLoading(false); // Role check is complete
+        setIsRoleLoading(false);
     }, []);
 
     useEffect(() => {
@@ -51,21 +56,30 @@ export default function ChildPage() {
         try {
             let data: Child[] = [];
             if (userRole === "ADMIN") {
-                // ADMIN fetches children based on filter
                 data =
                     filter === "haveDoctor"
                         ? await childApi.getChildHaveDoctor()
                         : await childApi.getChildDontHaveDoctor();
             } else if (userRole === "MEMBER" && userId) {
-                // MEMBER fetches children by parent ID
                 data = await childApi.getChildByParentId(BigInt(userId));
+            } else if (userRole === "DOCTOR" && userId) {
+                data = await childApi.getChildByDoctorId(BigInt(userId));
             }
             setChildren(data);
         } catch (error) {
             console.error("Error fetching children:", error);
-            setChildren([]); // Set children to an empty array in case of error
+            setChildren([]);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchDoctors = async () => {
+        try {
+            const data = await userApi.getDoctors();
+            setDoctors(data);
+        } catch (error) {
+            console.error("Error fetching doctors:", error);
         }
     };
 
@@ -89,26 +103,22 @@ export default function ChildPage() {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
 
-    // Open Create Modal
     const openCreateModal = () => {
         setCreatingChild({});
         setIsCreateModalOpen(true);
     };
 
-    // Close Create Modal
     const closeCreateModal = () => {
         setIsCreateModalOpen(false);
         setCreatingChild({});
     };
 
-    // Handle Create Change
     const handleCreateChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
         setCreatingChild({ ...creatingChild, [e.target.name]: e.target.value });
     };
 
-    // Save New Child
     const saveNewChild = async () => {
         try {
             const newChild = await childApi.createChild(creatingChild as Child);
@@ -121,19 +131,16 @@ export default function ChildPage() {
         }
     };
 
-    // Open Update Modal
     const openEditModal = (child: Child) => {
         setEditingChild(child);
         setIsEditModalOpen(true);
     };
 
-    // Close Update Modal
     const closeEditModal = () => {
         setIsEditModalOpen(false);
         setEditingChild(null);
     };
 
-    // Save Changes in Update Modal
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
     ) => {
@@ -153,12 +160,12 @@ export default function ChildPage() {
                     dob: editingChild.dob,
                     gender: editingChild.gender,
                 };
-    
+
                 const updatedChild = await childApi.updateChild(
                     editingChild.id,
                     updatedChildData
                 );
-    
+
                 setChildren(
                     children.map((child) =>
                         child.id === updatedChild.id ? updatedChild : child
@@ -173,19 +180,16 @@ export default function ChildPage() {
         }
     };
 
-    // Open Delete Modal
     const openDeleteModal = (child: Child) => {
         setDeletingChild(child);
         setIsDeleteModalOpen(true);
     };
 
-    // Close Delete Modal
     const closeDeleteModal = () => {
         setIsDeleteModalOpen(false);
         setDeletingChild(null);
     };
 
-    // Handle Delete
     const handleDelete = async () => {
         if (deletingChild) {
             try {
@@ -202,8 +206,46 @@ export default function ChildPage() {
         }
     };
 
+    const openSetDoctorModal = (child: Child) => {
+        setSelectedChild(child); 
+        fetchDoctors();
+        setIsSetDoctorModalOpen(true);
+    };
+
+    const closeSetDoctorModal = () => {
+        setIsSetDoctorModalOpen(false);
+        setSelectedChild(null);
+    };
+
+    const handleSetDoctor = async (doctorId: BigInt) => {
+        if (!selectedChild || !selectedChild.id) { // Check if selectedChild is null or undefined
+            console.error("No child selected for setting a doctor.");
+            setSuccessMessage("Failed to set doctor. No child selected.");
+            setTimeout(() => setSuccessMessage(null), 3000);
+            return;
+        }
+    
+        try {
+            const updatedChild = await childApi.setDoctor(
+                selectedChild.id, // Use selectedChild.id
+                doctorId
+            );
+            setChildren(
+                children.map((child) =>
+                    child.id === updatedChild.id ? updatedChild : child
+                )
+            );
+            setSuccessMessage("Doctor set successfully!");
+            closeSetDoctorModal();
+            setTimeout(() => setSuccessMessage(null), 3000);
+        } catch (error) {
+            console.error("Error setting doctor:", error);
+            setSuccessMessage("Failed to set doctor.");
+            setTimeout(() => setSuccessMessage(null), 3000);
+        }
+    };
+
     if (isRoleLoading) {
-        // Show a loading spinner or placeholder while determining the user's role
         return (
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
                 <h1 className="text-3xl font-bold mb-4">Loading...</h1>
@@ -240,7 +282,6 @@ export default function ChildPage() {
                 backgroundBlendMode: "overlay",
             }}
         >
-            {/* Navbar */}
             <Navbar />
 
             <main className="flex-grow px-4 md:px-8 lg:px-16">
@@ -250,7 +291,6 @@ export default function ChildPage() {
 
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex gap-4">
-                        {/* Hide Create Button for DOCTOR */}
                         {userRole !== "DOCTOR" && (
                             <button
                                 onClick={openCreateModal}
@@ -358,7 +398,6 @@ export default function ChildPage() {
                                                             : "N/A"}
                                                     </td>
                                                     <td className="p-4 flex gap-3">
-                                                        {/* Hide Update and Delete Buttons for DOCTOR */}
                                                         {userRole !== "DOCTOR" && (
                                                             <>
                                                                 <button
@@ -383,6 +422,19 @@ export default function ChildPage() {
                                                                     <FaTrash />{" "}
                                                                     Delete
                                                                 </button>
+                                                                {!child.doctorId && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            openSetDoctorModal(
+                                                                                child
+                                                                            )
+                                                                        }
+                                                                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+                                                                    >
+                                                                        <FaUserMd />{" "}
+                                                                        Doctor
+                                                                    </button>
+                                                                )}
                                                             </>
                                                         )}
                                                         <Link
@@ -409,7 +461,6 @@ export default function ChildPage() {
                         </>
                     )}
                 </div>
-                {/* Pagination Controls */}
                 <div className="flex justify-center items-center mt-6 gap-4">
                     <button
                         onClick={prevPage}
@@ -441,7 +492,6 @@ export default function ChildPage() {
                 </div>
             </main>
 
-            {/* Create Modal */}
             <CreateModal
                 isOpen={isCreateModalOpen}
                 child={creatingChild}
@@ -450,7 +500,6 @@ export default function ChildPage() {
                 saveChanges={saveNewChild}
             />
 
-            {/* Update Modal */}
             <EditModal
                 isOpen={isEditModalOpen}
                 child={editingChild}
@@ -459,7 +508,6 @@ export default function ChildPage() {
                 saveChanges={saveChanges}
             />
 
-            {/* Delete Confirmation Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 child={deletingChild}
@@ -467,7 +515,13 @@ export default function ChildPage() {
                 handleDelete={handleDelete}
             />
 
-            {/* Footer */}
+            <SetDoctorModal
+                isOpen={isSetDoctorModalOpen}
+                doctors={doctors}
+                closeSetDoctorModal={closeSetDoctorModal}
+                handleSetDoctor={handleSetDoctor}
+            />
+
             <Footer />
         </div>
     );

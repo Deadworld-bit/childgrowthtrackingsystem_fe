@@ -8,6 +8,7 @@ export interface Child {
     gender: string;
     parentId: string;
     parentName: string;
+    doctorId: BigInt;
     createDate: Date;
     updateDate: Date;
     status: boolean;
@@ -56,6 +57,27 @@ const getChildByParentId = async (parentId: BigInt): Promise<Child[]> => {
     }
 };
 
+const getChildByDoctorId = async (doctorId: BigInt): Promise<Child[]> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: Child[] }>(`/child/getChildByDoctorId/${doctorId}`);
+        return response.data.data;
+    } catch (error) {
+        console.error(`Error fetching child with Parent ID ${doctorId}:`, error);
+        throw error;
+    }
+};
+
+// Set doctor for a child
+const setDoctor = async (id: BigInt, doctorId: BigInt): Promise<Child> => {
+    try {
+        const response = await api.put<{ status: string; message: string; data: Child }>(`/child/setDoctor/${id}`, null, { params: { doctorId: doctorId.toString() } });
+        return response.data.data;
+    } catch (error) {
+        console.error(`Error setting doctor for child with ID ${id}:`, error);
+        throw error;
+    }
+};
+
 // Create a child
 const createChild = async (childData: Omit<Child, "id" | "createDate" | "updateDate">): Promise<Child> => {
     try {
@@ -93,6 +115,8 @@ const childApi = {
     getChildDontHaveDoctor,
     getChildById,
     getChildByParentId,
+    getChildByDoctorId,
+    setDoctor,
     createChild,
     updateChild,
     deleteChild
