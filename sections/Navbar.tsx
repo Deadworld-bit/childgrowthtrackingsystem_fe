@@ -108,7 +108,7 @@ export default function Navbar() {
                                             Log In
                                         </Button>
                                     </Link>
-                                    <Link href="/SignUp">
+                                    <Link href="/SIgnUp">
                                         <Button
                                             variant="primary"
                                             className="hidden md:inline-flex items-center"
@@ -165,6 +165,12 @@ export default function Navbar() {
                                     className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
                                 >
                                     Child
+                                </a>
+                                <a
+                                    href="/feedback"
+                                    className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
+                                >
+                                    Feedback & Rating
                                 </a>
                                 <hr className="border-gray-700 my-4" />
                             </>
