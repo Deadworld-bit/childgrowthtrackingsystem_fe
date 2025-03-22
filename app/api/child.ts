@@ -17,7 +17,11 @@ export interface Child {
 // Fetch all children with a doctor
 const getChildHaveDoctor = async (): Promise<Child[]> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child[] }>("/child/getAllChildHaveDoctor");
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: Child[];
+        }>("/child/getAllChildHaveDoctor");
         return response.data.data;
     } catch (error) {
         console.error("Error fetching children with a doctor:", error);
@@ -28,7 +32,11 @@ const getChildHaveDoctor = async (): Promise<Child[]> => {
 // Fetch all children without a doctor
 const getChildDontHaveDoctor = async (): Promise<Child[]> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child[] }>("/child/getAllChildDontHaveDoctor");
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: Child[];
+        }>("/child/getAllChildDontHaveDoctor");
         return response.data.data;
     } catch (error) {
         console.error("Error fetching children without a doctor:", error);
@@ -39,7 +47,11 @@ const getChildDontHaveDoctor = async (): Promise<Child[]> => {
 // Fetch child by ID
 const getChildById = async (id: BigInt): Promise<Child> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child }>(`/child/findById/${id}`);
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: Child;
+        }>(`/child/findById/${id}`);
         return response.data.data;
     } catch (error) {
         console.error(`Error fetching child with ID ${id}:`, error);
@@ -49,20 +61,34 @@ const getChildById = async (id: BigInt): Promise<Child> => {
 
 const getChildByParentId = async (parentId: BigInt): Promise<Child[]> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child[] }>(`/child/findByParentId/${parentId}`);
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: Child[];
+        }>(`/child/findByParentId/${parentId}`);
         return response.data.data;
     } catch (error) {
-        console.error(`Error fetching child with Parent ID ${parentId}:`, error);
+        console.error(
+            `Error fetching child with Parent ID ${parentId}:`,
+            error
+        );
         throw error;
     }
 };
 
 const getChildByDoctorId = async (doctorId: BigInt): Promise<Child[]> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: Child[] }>(`/child/getChildByDoctorId/${doctorId}`);
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: Child[];
+        }>(`/child/getChildByDoctorId/${doctorId}`);
         return response.data.data;
     } catch (error) {
-        console.error(`Error fetching child with Parent ID ${doctorId}:`, error);
+        console.error(
+            `Error fetching child with Parent ID ${doctorId}:`,
+            error
+        );
         throw error;
     }
 };
@@ -70,7 +96,13 @@ const getChildByDoctorId = async (doctorId: BigInt): Promise<Child[]> => {
 // Set doctor for a child
 const setDoctor = async (id: BigInt, doctorId: BigInt): Promise<Child> => {
     try {
-        const response = await api.put<{ status: string; message: string; data: Child }>(`/child/setDoctor/${id}`, null, { params: { doctorId: doctorId.toString() } });
+        const response = await api.put<{
+            status: string;
+            message: string;
+            data: Child;
+        }>(`/child/setDoctor/${id}`, null, {
+            params: { doctorId: doctorId.toString() },
+        });
         return response.data.data;
     } catch (error) {
         console.error(`Error setting doctor for child with ID ${id}:`, error);
@@ -79,10 +111,10 @@ const setDoctor = async (id: BigInt, doctorId: BigInt): Promise<Child> => {
 };
 
 // Create a child
-const createChild = async (childData: Omit<Child, "id" | "createDate" | "updateDate">): Promise<Child> => {
+const createChild = async (childData: {name: string; dob: string; gender: string; parentId: number; }): Promise<Child> => {
     try {
-        const response = await api.post<Child>("/child/createChild", childData);
-        return response.data; // The backend should return the full Child object with an auto-generated `id`
+        const response = await api.post<{status: string; message: string; data: Child; }>("/child/createChild", childData);
+        return response.data.data; 
     } catch (error) {
         console.error("Error creating child:", error);
         throw error;
@@ -90,9 +122,16 @@ const createChild = async (childData: Omit<Child, "id" | "createDate" | "updateD
 };
 
 // Update a child
-const updateChild = async (id: BigInt, childData: Partial<Child>): Promise<Child> => {
+const updateChild = async (
+    id: BigInt,
+    childData: Partial<Child>
+): Promise<Child> => {
     try {
-        const response = await api.put<{ status: string; message: string; data: Child }>(`/child/update/${id}`,childData);
+        const response = await api.put<{
+            status: string;
+            message: string;
+            data: Child;
+        }>(`/child/update/${id}`, childData);
         return response.data.data;
     } catch (error) {
         console.error(`Error updating child with ID ${id}:`, error);
@@ -119,7 +158,7 @@ const childApi = {
     setDoctor,
     createChild,
     updateChild,
-    deleteChild
+    deleteChild,
 };
 
 export default childApi;

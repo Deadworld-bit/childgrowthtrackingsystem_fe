@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaInfoCircle, FaPlus, FaUserMd } from "react-icons/fa";
+import {
+    FaEdit,
+    FaTrash,
+    FaInfoCircle,
+    FaPlus,
+    FaUserMd,
+} from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import Link from "next/link";
@@ -38,13 +44,29 @@ export default function ChildPage() {
 
     // Fetch user's role and ID from cookies
     useEffect(() => {
-        const user = Cookies.get("user");
-        if (user) {
-            const parsedUser = JSON.parse(user);
-            setUserRole(parsedUser.role);
-            setUserId(parsedUser.id);
-        }
-        setIsRoleLoading(false);
+        const fetchUserData = async () => {
+            const user = Cookies.get("user");
+            if (user) {
+                try {
+                    const parsedUser = JSON.parse(user);
+                    console.log("Parsed User from Cookie:", parsedUser);
+
+                    // Fetch user data using getUserById API
+                    const userData = await userApi.getUserById(parsedUser.id);
+                    console.log("Fetched User Data:", userData);
+
+                    setUserRole(userData.role); // Set user role from API response
+                    setUserId(userData.id.toString()); // Convert BigInt to string before setting userId
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                console.error("User cookie not found.");
+            }
+            setIsRoleLoading(false);
+        };
+
+        fetchUserData();
     }, []);
 
     useEffect(() => {
@@ -120,8 +142,31 @@ export default function ChildPage() {
     };
 
     const saveNewChild = async () => {
+        if (!userId) {
+            console.error("Parent ID is missing. Please log in again.");
+            return;
+        }
+
         try {
-            const newChild = await childApi.createChild(creatingChild as Child);
+            // Add parentId from the fetched user data
+            const newChildData = {
+                ...creatingChild,
+                dob: creatingChild.dob ? creatingChild.dob.toString() : "",
+                parentId: parseInt(userId), // Use userId as parentId
+            };
+
+            console.log("Creating child with data:", newChildData);
+
+            const newChild = await childApi.createChild(
+                newChildData as {
+                    name: string;
+                    dob: string;
+                    gender: string;
+                    parentId: number;
+                }
+            );
+
+            // Add the newly created child to the list
             setChildren([...children, newChild]);
             setSuccessMessage("Child created successfully!");
             closeCreateModal();
@@ -207,7 +252,7 @@ export default function ChildPage() {
     };
 
     const openSetDoctorModal = (child: Child) => {
-        setSelectedChild(child); 
+        setSelectedChild(child);
         fetchDoctors();
         setIsSetDoctorModalOpen(true);
     };
@@ -218,13 +263,14 @@ export default function ChildPage() {
     };
 
     const handleSetDoctor = async (doctorId: BigInt) => {
-        if (!selectedChild || !selectedChild.id) { // Check if selectedChild is null or undefined
+        if (!selectedChild || !selectedChild.id) {
+            // Check if selectedChild is null or undefined
             console.error("No child selected for setting a doctor.");
             setSuccessMessage("Failed to set doctor. No child selected.");
             setTimeout(() => setSuccessMessage(null), 3000);
             return;
         }
-    
+
         try {
             const updatedChild = await childApi.setDoctor(
                 selectedChild.id, // Use selectedChild.id
@@ -253,7 +299,11 @@ export default function ChildPage() {
         );
     }
 
-    if (userRole !== "ADMIN" && userRole !== "MEMBER" && userRole !== "DOCTOR") {
+    if (
+        userRole !== "ADMIN" &&
+        userRole !== "MEMBER" &&
+        userRole !== "DOCTOR"
+    ) {
         return (
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
                 <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
@@ -398,7 +448,8 @@ export default function ChildPage() {
                                                             : "N/A"}
                                                     </td>
                                                     <td className="p-4 flex gap-3">
-                                                        {userRole !== "DOCTOR" && (
+                                                        {userRole !==
+                                                            "DOCTOR" && (
                                                             <>
                                                                 <button
                                                                     onClick={() =>
@@ -422,19 +473,21 @@ export default function ChildPage() {
                                                                     <FaTrash />{" "}
                                                                     Delete
                                                                 </button>
-                                                                {!child.doctorId && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            openSetDoctorModal(
-                                                                                child
-                                                                            )
-                                                                        }
-                                                                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
-                                                                    >
-                                                                        <FaUserMd />{" "}
-                                                                        Doctor
-                                                                    </button>
-                                                                )}
+                                                                {userRole ===
+                                                                    "ADMIN" &&
+                                                                    !child.doctorId && (
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                openSetDoctorModal(
+                                                                                    child
+                                                                                )
+                                                                            }
+                                                                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+                                                                        >
+                                                                            <FaUserMd />{" "}
+                                                                            Doctor
+                                                                        </button>
+                                                                    )}
                                                             </>
                                                         )}
                                                         <Link
@@ -495,7 +548,12 @@ export default function ChildPage() {
             <CreateModal
                 isOpen={isCreateModalOpen}
                 child={creatingChild}
-                handleChange={handleCreateChange}
+                handleChange={(e) =>
+                    setCreatingChild({
+                        ...creatingChild,
+                        [e.target.name]: e.target.value,
+                    })
+                }
                 closeCreateModal={closeCreateModal}
                 saveChanges={saveNewChild}
             />

@@ -17,6 +17,8 @@ import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import DeleteMetricModal from "@/app/child/modals/deleteMetricModal";
 import { FaTrash } from "react-icons/fa";
+import postApi, { Post } from "@/app/api/post";
+import Cookies from "js-cookie";
 
 export default function ChildDetailPage() {
     const params = useParams();
@@ -34,48 +36,16 @@ export default function ChildDetailPage() {
     const [newRecordedDate, setNewRecordedDate] = useState("");
     const [successMessage, setSuccessMessage] = useState(""); // For success notifications
 
-    // State for posts
-    const [posts, setPosts] = useState([
-        {
-            id: 1,
-            author: "Dr. John Doe",
-            role: "Doctor",
-            content:
-                "Ensure your child gets enough sleep and eats a balanced diet.",
-            createdAt: new Date().toISOString(),
-        },
-        {
-            id: 2,
-            author: "Jane Smith",
-            role: "Parent",
-            content:
-                "Using this app has helped me monitor my child's progress easily.",
-            createdAt: new Date().toISOString(),
-        },
-    ]);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [newPostTitle, setNewPostTitle] = useState("");
     const [newPostContent, setNewPostContent] = useState("");
     const [selectedYearPost, setSelectedYearPost] = useState("");
-
-    const handleCreatePost = () => {
-        if (!newPostContent.trim()) {
-            alert("Please write something before posting.");
-            return;
-        }
-        const newPost = {
-            id: posts.length + 1,
-            author: "Current User", // Replace with logged-in user's name
-            role: "Parent", // Replace with logged-in user's role
-            content: newPostContent,
-            createdAt: new Date().toISOString(),
-        };
-        setPosts([newPost, ...posts]);
-        setNewPostContent("");
-    };
 
     useEffect(() => {
         if (id && typeof id === "string") {
             fetchChildDetails(id);
             fetchChildMetrics(id);
+            fetchChildPosts(id);
         }
     }, [id]);
 
@@ -113,6 +83,21 @@ export default function ChildDetailPage() {
         }
     };
 
+    const fetchChildPosts = async (childId: string) => {
+        try {
+            const postsData = await postApi.getAllPostByChildId(
+                BigInt(childId)
+            );
+            const parsedPosts = postsData.map((post) => ({
+                ...post,
+                createDate: new Date(post.createdDate),
+            }));
+            setPosts(parsedPosts);
+        } catch (error) {
+            console.error("Error fetching posts for child:", error);
+        }
+    };
+
     const openDeleteModal = (metric: Metric) => {
         setDeletingMetric(metric);
         setIsDeleteModalOpen(true);
@@ -137,6 +122,15 @@ export default function ChildDetailPage() {
         }
     };
 
+    const handleDeletePost = async (postId: BigInt) => {
+        try {
+            await postApi.deletePost(postId); // Call the deletePost API
+            setPosts(posts.filter((post) => post.id !== postId)); // Remove the deleted post from the list
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        }
+    };
+
     // Updated function to handle creating a metric and display a success message
     const handleAddEntry = async () => {
         if (!newWeight || !newHeight || !newRecordedDate) {
@@ -147,9 +141,8 @@ export default function ChildDetailPage() {
             const metricData = {
                 weight: parseFloat(newWeight),
                 height: parseFloat(newHeight),
-                recordedDate: new Date(newRecordedDate),
-                // Convert child ID from string to BigInt to match API expectations
-                childId: typeof id === "string" ? id : "",
+                recordedDate: new Date(newRecordedDate).toISOString(),
+                childId: typeof id === "string" ? Number(id) : 0,
             };
             const createdMetric = await metricApi.createMetric(metricData);
             // Convert the returned recordedDate to a Date object
@@ -174,6 +167,41 @@ export default function ChildDetailPage() {
         if (bmi >= 18.5 && bmi <= 24.9) return "bg-green-500";
         if (bmi >= 25 && bmi <= 29.9) return "bg-yellow-500";
         return "bg-red-500";
+    };
+
+    const handleCreatePost = async () => {
+        if (!newPostTitle.trim() || !newPostContent.trim()) {
+            alert("Please provide both a title and content for the post.");
+            return;
+        }
+
+        try {
+            // Retrieve user data from cookies
+            const userCookie = Cookies.get("user");
+            if (!userCookie) {
+                alert("User not logged in. Please log in to create a post.");
+                return;
+            }
+
+            const userData = JSON.parse(userCookie);
+            const userId = userData.id;
+
+            const newPost = {
+                childId: Number(BigInt(typeof id === "string" ? id : "0")),
+                userId: Number(userId),
+                title: newPostTitle,
+                description: newPostContent,
+            };
+
+            const createdPost = await postApi.createPost(newPost);
+            createdPost.createdDate = new Date(createdPost.createdDate);
+
+            setPosts([createdPost, ...posts]);
+            setNewPostTitle("");
+            setNewPostContent("");
+        } catch (error) {
+            console.error("Error creating post:", error);
+        }
     };
 
     return (
@@ -347,20 +375,28 @@ export default function ChildDetailPage() {
                 </div>
                 {/* Posts Section */}
                 <div className="mt-10">
-                    <h2 className="text-xl font-bold mb-4">Community Feed</h2>
+                    <h2 className="text-2xl font-bold mb-6 text-blue-400">
+                        Doctor-Parent Feed
+                    </h2>
 
                     {/* Filter by Year */}
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-between items-center mb-6">
+                        <p className="text-gray-400 text-sm">
+                            Showing {posts.length} post
+                            {posts.length !== 1 ? "s" : ""}
+                        </p>
                         <select
-                            className="p-2 bg-gray-700 rounded text-white"
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYearPost(e.target.value)}
+                            className="p-2 bg-gray-800 rounded text-white border border-gray-600 focus:ring-2 focus:ring-blue-500"
+                            value={selectedYearPost}
+                            onChange={(e) =>
+                                setSelectedYearPost(e.target.value)
+                            }
                         >
                             <option value="">All Years</option>
                             {[
                                 ...new Set(
                                     posts.map((post) =>
-                                        new Date(post.createdAt).getFullYear()
+                                        new Date(post.createdDate).getFullYear()
                                     )
                                 ),
                             ].map((year) => (
@@ -372,24 +408,33 @@ export default function ChildDetailPage() {
                     </div>
 
                     {/* Create New Post */}
-                    <div className="bg-gray-800 p-4 rounded mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold">
-                                U
-                            </div>
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+                        <h3 className="text-lg font-semibold text-white mb-4">
+                            Create a New Post
+                        </h3>
+                        <div className="flex flex-col gap-4">
+                            <input
+                                type="text"
+                                placeholder="Post Title"
+                                className="p-3 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={newPostTitle}
+                                onChange={(e) =>
+                                    setNewPostTitle(e.target.value)
+                                }
+                            />
                             <textarea
                                 placeholder="What's on your mind?"
-                                className="flex-1 p-2 rounded bg-gray-700 text-white resize-none"
+                                className="p-3 rounded bg-gray-700 text-white border border-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={newPostContent}
                                 onChange={(e) =>
                                     setNewPostContent(e.target.value)
                                 }
                             ></textarea>
                         </div>
-                        <div className="flex justify-end mt-2">
+                        <div className="flex justify-end mt-4">
                             <button
                                 onClick={handleCreatePost}
-                                className="px-4 py-2 bg-blue-500 rounded text-white hover:bg-blue-600"
+                                className="px-6 py-2 bg-blue-500 rounded text-white hover:bg-blue-600 transition duration-200"
                             >
                                 Post
                             </button>
@@ -397,43 +442,61 @@ export default function ChildDetailPage() {
                     </div>
 
                     {/* Posts Feed */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 max-h-[500px] overflow-y-auto">
                         {posts
                             .filter((post) =>
                                 selectedYearPost
-                                    ? new Date(post.createdAt)
+                                    ? new Date(post.createdDate)
                                           .getFullYear()
                                           .toString() === selectedYearPost
                                     : true
                             )
-                            .map((post) => (
-                                <div
-                                    key={post.id}
-                                    className="bg-gray-800 p-5 rounded shadow-lg hover:shadow-xl transition-shadow duration-300"
-                                >
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold">
-                                            {post.author[0]}
+                            .map((post) => {
+                                // Retrieve userId from cookies
+                                const userCookie = Cookies.get("user");
+                                const userData = userCookie
+                                    ? JSON.parse(userCookie)
+                                    : null;
+                                const loggedInUserId = userData?.id;
+
+                                return (
+                                    <div
+                                        key={post.id.toString()}
+                                        className="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 relative"
+                                    >
+                                        {/* Delete Button */}
+                                        {loggedInUserId === post.userId && (
+                                            <button
+                                                onClick={() =>
+                                                    handleDeletePost(post.id)
+                                                }
+                                                className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                                            >
+                                                <FaTrash />
+                                            </button>
+                                        )}
+
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                                                {post.title[0]}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-white">
+                                                    {post.title}
+                                                </h3>
+                                                <span className="text-xs text-gray-500">
+                                                    {new Date(
+                                                        post.createdDate
+                                                    ).toLocaleDateString()}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold">
-                                                {post.author}
-                                            </h3>
-                                            <p className="text-sm text-gray-400">
-                                                {post.role}
-                                            </p>
-                                            <span className="text-xs text-gray-500">
-                                                {new Date(
-                                                    post.createdAt
-                                                ).toLocaleDateString()}
-                                            </span>
-                                        </div>
+                                        <p className="text-gray-300">
+                                            {post.description}
+                                        </p>
                                     </div>
-                                    <p className="text-sm text-gray-300">
-                                        {post.content}
-                                    </p>
-                                </div>
-                            ))}
+                                );
+                            })}
                     </div>
                 </div>
             </div>

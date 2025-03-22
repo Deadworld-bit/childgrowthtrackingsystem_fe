@@ -166,14 +166,15 @@ export default function Navbar() {
                                 >
                                     Child
                                 </a>
-                                <a
-                                    href="/feedback"
-                                    className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
-                                >
-                                    Feedback & Rating
-                                </a>
-                                <hr className="border-gray-700 my-4" />
                             </>
+                        )}
+                        {(userRole === "ADMIN" || userRole === "MEMBER") && (
+                            <a
+                                href="/feedback"
+                                className="py-2 text-lg font-semibold hover:text-yellow-400 transition"
+                            >
+                                Feedback & Rating
+                            </a>
                         )}
                         {(userRole === "DOCTOR" || userRole === "MEMBER") && (
                             <a

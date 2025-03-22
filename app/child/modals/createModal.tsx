@@ -53,16 +53,6 @@ const CreateModal: React.FC<CreateModalProps> = ({
                         <option value="Female">Female</option>
                     </select>
                 </div>
-                <div className="mb-4">
-                    <label className="block text-sm">Parent ID</label>
-                    <input
-                        type="text"
-                        name="parentId"
-                        value={child.parentId || ""}
-                        onChange={handleChange}
-                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
                 <div className="flex justify-end gap-4">
                     <button
                         onClick={closeCreateModal}

@@ -26,6 +26,8 @@ import {
 } from "react-icons/fa";
 import userApi from "@/app/api/user";
 import childApi from "@/app/api/child";
+import Cookies from "js-cookie";
+import Link from "next/link";
 
 export default function OverviewPage() {
     const [data, setData] = useState({
@@ -54,6 +56,18 @@ export default function OverviewPage() {
         { name: "Doctors", value: data.activeDoctors },
         { name: "Members", value: data.activeMembers },
     ];
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
+
+    // Fetch user's role from cookies
+    useEffect(() => {
+        const user = Cookies.get("user");
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
+        }
+        setIsRoleLoading(false); // Role check is complete
+    }, []);
 
     // Fetch data from APIs
     useEffect(() => {
@@ -143,6 +157,32 @@ export default function OverviewPage() {
     const availableYears = [
         ...new Set(userGrowthData.map((data) => data.year)),
     ];
+
+    if (isRoleLoading) {
+        // Show a loading spinner or placeholder while determining the user's role
+        return (
+            <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
+                <h1 className="text-3xl font-bold mb-4">Loading...</h1>
+            </div>
+        );
+    }
+
+    if (userRole !== "ADMIN" && userRole !== "MEMBER") {
+        return (
+            <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
+                <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+                <p className="text-lg">
+                    You're not allowed to use this function.
+                </p>
+                <Link
+                    className="text-sm text-blue-400 hover:underline block text-right mt-1"
+                    href="./"
+                >
+                    Return Home
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div

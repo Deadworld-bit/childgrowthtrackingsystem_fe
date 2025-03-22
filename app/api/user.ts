@@ -59,10 +59,7 @@ const getUserById = async (id: string): Promise<User> => {
 
 const createUser = async (userData: {username: string; password: string; email: string; role: string;}): Promise<{ status: string; message: string; data: User | null }> => {
     try {
-      const response = await api.post<{ status: string; message: string; data: User | null }>(
-        "/users",
-        userData
-      );
+      const response = await api.post<{ status: string; message: string; data: User | null }>("/users",userData);
       return response.data; 
     } catch (error) {
       console.error("Error creating user:", error);
