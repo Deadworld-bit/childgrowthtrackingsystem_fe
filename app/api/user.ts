@@ -2,7 +2,7 @@ import api from ".";
 
 // Define User type
 export interface User {
-    id: BigInt;
+    id: bigint;
     username: string;
     email: string;
     password:string;
@@ -47,7 +47,7 @@ const getDoctors = async (): Promise<(User & Doctor)[]> => {
 };
 
 // Fetch user by ID
-const getUserById = async (id: string): Promise<User> => {
+const getUserById = async (id: bigint): Promise<User> => {
     try {
         const response = await api.get<{ status: string; message: string; data: User }>(`/users/userid/${id}`);
         return response.data.data;
@@ -68,7 +68,7 @@ const createUser = async (userData: {username: string; password: string; email: 
   };
 
 // Update a user
-const updateUser = async (id: BigInt, userData: Partial<User>): Promise<User> => {
+const updateUser = async (id: bigint, userData: Partial<User>): Promise<User> => {
     try {
         const response = await api.put<{ status: string; message: string; data: User }>(`/users/${id}`, userData);
         return response.data.data;
@@ -79,7 +79,7 @@ const updateUser = async (id: BigInt, userData: Partial<User>): Promise<User> =>
 };
 
 // Delete a user
-const deleteUser = async (id: BigInt): Promise<void> => {
+const deleteUser = async (id: bigint): Promise<void> => {
     try {
         await api.put(`/users/delete/${id}`);
     } catch (error) {

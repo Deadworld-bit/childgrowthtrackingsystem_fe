@@ -2,11 +2,11 @@ import api from ".";
 
 // Define Metric type
 export interface Metric {
-    id: BigInt;
+    id: bigint;
     weight: number;
     height: number;
     bmi: number;
-    childId: BigInt;
+    childId: bigint;
     recordedDate: Date;
     createDate: Date;
     status: boolean;

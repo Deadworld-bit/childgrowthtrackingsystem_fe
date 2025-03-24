@@ -2,13 +2,13 @@ import api from ".";
 
 // Define Child type
 export interface Child {
-    id: BigInt;
+    id: bigint;
     name: string;
     dob: Date;
     gender: string;
-    parentId: string;
+    parentId: bigint;
     parentName: string;
-    doctorId: BigInt;
+    doctorId: bigint;
     createDate: Date;
     updateDate: Date;
     status: boolean;
@@ -59,7 +59,7 @@ const getChildById = async (id: BigInt): Promise<Child> => {
     }
 };
 
-const getChildByParentId = async (parentId: BigInt): Promise<Child[]> => {
+const getChildByParentId = async (parentId: bigint): Promise<Child[]> => {
     try {
         const response = await api.get<{
             status: string;
@@ -76,7 +76,7 @@ const getChildByParentId = async (parentId: BigInt): Promise<Child[]> => {
     }
 };
 
-const getChildByDoctorId = async (doctorId: BigInt): Promise<Child[]> => {
+const getChildByDoctorId = async (doctorId: bigint): Promise<Child[]> => {
     try {
         const response = await api.get<{
             status: string;
@@ -94,7 +94,7 @@ const getChildByDoctorId = async (doctorId: BigInt): Promise<Child[]> => {
 };
 
 // Set doctor for a child
-const setDoctor = async (id: BigInt, doctorId: BigInt): Promise<Child> => {
+const setDoctor = async (id: bigint, doctorId: bigint): Promise<Child> => {
     try {
         const response = await api.put<{
             status: string;
@@ -123,7 +123,7 @@ const createChild = async (childData: {name: string; dob: string; gender: string
 
 // Update a child
 const updateChild = async (
-    id: BigInt,
+    id: bigint,
     childData: Partial<Child>
 ): Promise<Child> => {
     try {
@@ -140,7 +140,7 @@ const updateChild = async (
 };
 
 // Delete a child
-const deleteChild = async (id: BigInt): Promise<void> => {
+const deleteChild = async (id: bigint): Promise<void> => {
     try {
         await api.put(`/child/delete/${id}`);
     } catch (error) {

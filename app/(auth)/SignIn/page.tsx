@@ -113,7 +113,7 @@ const Page = () => {
           </form>
 
           <div className="text-center mt-6 text-gray-400">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               className="text-green-400 hover:text-green-300 font-semibold"
               href="/SIgnUp"
@@ -137,7 +137,7 @@ const Page = () => {
       <div className="w-1/2 flex flex-col items-center justify-center text-center text-white p-10 z-10">
         <h2 className="text-5xl font-bold mb-4">Welcome to Our Platform</h2>
         <p className="text-lg text-gray-300">
-          Join us to track your child's growth and connect with healthcare professionals.
+          Join us to track your child&apos;s growth and connect with healthcare professionals.
         </p>
       </div>
     </section>

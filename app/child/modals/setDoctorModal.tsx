@@ -5,7 +5,7 @@ interface SetDoctorModalProps {
     isOpen: boolean;
     doctors: User[];
     closeSetDoctorModal: () => void;
-    handleSetDoctor: (doctorId: BigInt) => void;
+    handleSetDoctor: (doctorId: bigint) => void;
 }
 
 const SetDoctorModal: React.FC<SetDoctorModalProps> = ({
@@ -14,7 +14,7 @@ const SetDoctorModal: React.FC<SetDoctorModalProps> = ({
     closeSetDoctorModal,
     handleSetDoctor,
 }) => {
-    const [selectedDoctorId, setSelectedDoctorId] = React.useState<BigInt | null>(null);
+    const [selectedDoctorId, setSelectedDoctorId] = React.useState<bigint | null>(null);
 
     if (!isOpen) return null;
 

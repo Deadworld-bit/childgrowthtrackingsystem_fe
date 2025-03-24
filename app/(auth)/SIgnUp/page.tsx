@@ -347,7 +347,7 @@ const Page = () => {
                     Welcome to Our Platform
                 </h2>
                 <p className="text-lg text-gray-300">
-                    Join us to track your child's growth and connect with
+                    Join us to track your child&apos;s growth and connect with
                     healthcare professionals.
                 </p>
             </div>

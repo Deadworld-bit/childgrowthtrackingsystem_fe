@@ -67,7 +67,7 @@ export default function UserPage() {
     };
 
     // Fetch user by ID
-    const fetchUserById = async (id: string) => {
+    const fetchUserById = async (id: bigint) => {
         try {
             const user = await userApi.getUserById(id);
             setProfileUser(user);
@@ -197,7 +197,7 @@ export default function UserPage() {
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
                 <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
                 <p className="text-lg">
-                    You're not allowed to use this function.
+                    You&apos;re not allowed to use this function.
                 </p>
                 <Link
                     className="text-sm text-blue-400 hover:underline block text-right mt-1"
@@ -337,7 +337,7 @@ export default function UserPage() {
                                                     <button
                                                         onClick={() =>
                                                             fetchUserById(
-                                                                user.id.toString()
+                                                                user.id
                                                             )
                                                         }
                                                         className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2"

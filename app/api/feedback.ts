@@ -1,10 +1,10 @@
 import api from ".";
 
 export interface Feedback {
-    id : BigInt;
-    userId: BigInt;
+    id : bigint;
+    userId: bigint;
     parentname: string;
-    doctorId: BigInt;
+    doctorId: bigint;
     doctorname: string;
     rating: number;
     description: string;
@@ -24,7 +24,7 @@ const getFeedbacks = async (): Promise<Feedback[]> => {
 };
 
 // Fetch average rating for a specific doctor by ID
-const getDoctorRating = async (doctorId: BigInt): Promise<number> => {
+const getDoctorRating = async (doctorId: bigint): Promise<number> => {
     try {
         const response = await api.get<{ status: string; message: string; data: number }>(`/feedback/doctor/rating/${doctorId}`);
         return response.data.data; 
@@ -35,7 +35,7 @@ const getDoctorRating = async (doctorId: BigInt): Promise<number> => {
 };
 
 // Fetch feedback for a specific doctor by ID
-const getFeedbackByDoctorId = async (doctorId: BigInt): Promise<Feedback[]> => {
+const getFeedbackByDoctorId = async (doctorId: bigint): Promise<Feedback[]> => {
     try {
         const response = await api.get<{ status: string; message: string; data: Feedback[] }>(`/feedback/doctor/${doctorId}`);
         return response.data.data; 

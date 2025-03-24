@@ -1,7 +1,7 @@
 import api from ".";
 
 export interface Post {
-    id: BigInt;
+    id: bigint;
     childId: BigInt;
     userId: BigInt;
     title: string;
@@ -11,7 +11,7 @@ export interface Post {
 }
 
 // Fetch all posts by child ID
-const getAllPostByChildId = async (childId: BigInt): Promise<Post[]> => {
+const getAllPostByChildId = async (childId: bigint): Promise<Post[]> => {
     try {
         const response = await api.get<{status: string; message: string; data: Post[];}>(`/post/getAllPostByChildId/${childId}`);
         return response.data.data; 
@@ -33,7 +33,7 @@ const createPost = async (childData: {userId: number; childId: number; title: st
 };
 
 // Delete a post
-const deletePost = async (id: BigInt): Promise<void> => {
+const deletePost = async (id: bigint): Promise<void> => {
     try {
         await api.put(`/post/deletePost/${id}`);
     } catch (error) {

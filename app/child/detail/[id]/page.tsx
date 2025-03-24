@@ -122,7 +122,7 @@ export default function ChildDetailPage() {
         }
     };
 
-    const handleDeletePost = async (postId: BigInt) => {
+    const handleDeletePost = async (postId: bigint) => {
         try {
             await postApi.deletePost(postId); // Call the deletePost API
             setPosts(posts.filter((post) => post.id !== postId)); // Remove the deleted post from the list

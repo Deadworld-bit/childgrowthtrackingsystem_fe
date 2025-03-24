@@ -211,7 +211,7 @@ const FeedbackPage = () => {
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
                 <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
                 <p className="text-lg">
-                    You're not allowed to use this function.
+                    You&apos;re not allowed to use this function.
                 </p>
                 <Link
                     className="text-sm text-blue-400 hover:underline block text-right mt-1"
