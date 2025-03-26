@@ -9,7 +9,7 @@ export interface User {
     role: string;
     membership: string;
     createdDate: Date;
-    updatedDate: Date;
+    updateDate: Date;
     status: boolean;
     specialization: string;
     certificate: string;

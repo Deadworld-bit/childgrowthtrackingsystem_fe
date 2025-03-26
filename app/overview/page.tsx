@@ -1,7 +1,5 @@
 "use client";
 
-import Footer from "@/sections/Footer";
-import Navbar from "@/sections/Navbar";
 import { useState, useEffect } from "react";
 import {
     PieChart,
@@ -28,6 +26,8 @@ import userApi from "@/app/api/user";
 import childApi from "@/app/api/child";
 import Cookies from "js-cookie";
 import Link from "next/link";
+import Navbar from "@/sections/Navbar";
+import Footer from "@/sections/Footer";
 
 export default function OverviewPage() {
     const [data, setData] = useState({
@@ -36,8 +36,8 @@ export default function OverviewPage() {
         premiumMembers: 0,
         basicMembers: 0,
         activeChildren: 0,
-        totalPosts: 500, // Placeholder for posts
-        systemUptime: "99.9%", // Placeholder for uptime
+        totalPosts: 500, // Placeholder
+        systemUptime: "99.9%", // Placeholder
     });
 
     const [userGrowthData, setUserGrowthData] = useState<
@@ -45,7 +45,8 @@ export default function OverviewPage() {
     >([]);
     const [selectedYear, setSelectedYear] = useState("");
 
-    const COLORS = ["#8884d8", "#82ca9d"];
+    // Slightly brighter colors for the Pie Chart
+    const COLORS = ["#5A61F0", "#5AD09D"]; // e.g. #5A61F0 (lighter purple), #5AD09D (lighter green)
 
     const membershipData = [
         { name: "Premium Members", value: data.premiumMembers },
@@ -56,6 +57,7 @@ export default function OverviewPage() {
         { name: "Doctors", value: data.activeDoctors },
         { name: "Members", value: data.activeMembers },
     ];
+
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
 
@@ -64,9 +66,9 @@ export default function OverviewPage() {
         const user = Cookies.get("user");
         if (user) {
             const parsedUser = JSON.parse(user);
-            setUserRole(parsedUser.role); // Assuming the user object has a `role` property
+            setUserRole(parsedUser.role);
         }
-        setIsRoleLoading(false); // Role check is complete
+        setIsRoleLoading(false);
     }, []);
 
     // Fetch data from APIs
@@ -138,8 +140,8 @@ export default function OverviewPage() {
                     premiumMembers,
                     basicMembers,
                     activeChildren,
-                    totalPosts: 500, // Placeholder for posts
-                    systemUptime: "99.9%", // Placeholder for uptime
+                    totalPosts: 500, // Placeholder
+                    systemUptime: "99.9%", // Placeholder
                 });
             } catch (error) {
                 console.error("Error fetching overview data:", error);
@@ -159,7 +161,6 @@ export default function OverviewPage() {
     ];
 
     if (isRoleLoading) {
-        // Show a loading spinner or placeholder while determining the user's role
         return (
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
                 <h1 className="text-3xl font-bold mb-4">Loading...</h1>
@@ -188,110 +189,124 @@ export default function OverviewPage() {
         <div
             className="flex flex-col min-h-screen text-white"
             style={{
-                background: "linear-gradient(to bottom, #1e1e1e, #121212)",
-                backgroundImage: "url('/parttern.jpg')",
+                backgroundColor: "#2C2C2C", // Lighter background
+                backgroundImage: "url('/parttern02.jpg')",
                 backgroundSize: "cover",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
-                backgroundBlendMode: "overlay",
+                // Removed the overlay to let the image be more visible
             }}
         >
             <Navbar />
-            <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white p-5">
-                {/* Header Section */}
-                <header className="text-center mb-10">
-                    <h1 className="text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+            <main className="flex-grow px-4 md:px-8 lg:px-16 py-6">
+                {/* Page Header */}
+                <header className="text-center mb-8">
+                    <h1 className="text-5xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-400">
                         System Overview
                     </h1>
+                    <p className="text-gray-200 text-lg">
+                        Get an at-a-glance view of key system metrics.
+                    </p>
                 </header>
 
                 {/* Metrics Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                    <div className="bg-gradient-to-r from-blue-500 to-blue-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaUserMd className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Active Doctors
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.activeDoctors}
-                                </p>
+                <div className="mb-8 bg-[#303030] rounded-lg p-6 shadow-md">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-100">
+                        Key Metrics
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Card 1 */}
+                        <div className="bg-gradient-to-r from-blue-400 to-blue-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaUserMd className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Active Doctors
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.activeDoctors}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-green-500 to-green-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaUsers className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Active Members
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.activeMembers}
-                                </p>
+                        {/* Card 2 */}
+                        <div className="bg-gradient-to-r from-green-400 to-green-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaUsers className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Active Members
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.activeMembers}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-yellow-500 to-yellow-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaCrown className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Premium Members
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.premiumMembers}
-                                </p>
+                        {/* Card 3 */}
+                        <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaCrown className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Premium Members
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.premiumMembers}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-purple-500 to-purple-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaUsers className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Basic Members
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.basicMembers}
-                                </p>
+                        {/* Card 4 */}
+                        <div className="bg-gradient-to-r from-purple-400 to-purple-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaUsers className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Basic Members
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.basicMembers}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-pink-500 to-pink-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaChild className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Active Children
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.activeChildren}
-                                </p>
+                        {/* Card 5 */}
+                        <div className="bg-gradient-to-r from-pink-400 to-pink-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaChild className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Active Children
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.activeChildren}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-teal-500 to-teal-700 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                        <div className="flex items-center gap-4">
-                            <FaChartLine className="text-4xl text-white" />
-                            <div>
-                                <h2 className="text-xl font-semibold">
-                                    Total Posts
-                                </h2>
-                                <p className="text-4xl font-bold mt-2">
-                                    {data.totalPosts}
-                                </p>
+                        {/* Card 6 */}
+                        <div className="bg-gradient-to-r from-teal-400 to-teal-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
+                            <div className="flex items-center gap-4">
+                                <FaChartLine className="text-4xl text-white" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">
+                                        Total Posts
+                                    </h3>
+                                    <p className="text-3xl font-bold mt-2 text-white">
+                                        {data.totalPosts}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {/* Pie Chart for Membership Distribution */}
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <h2 className="text-xl font-semibold mb-4">
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Pie Chart (Membership Distribution) */}
+                    <div className="bg-[#303030] p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <h2 className="text-xl font-semibold mb-4 text-gray-100">
                             Membership Distribution
                         </h2>
                         <ResponsiveContainer width="100%" height={300}>
@@ -317,9 +332,9 @@ export default function OverviewPage() {
                         </ResponsiveContainer>
                     </div>
 
-                    {/* Bar Chart for User Distribution */}
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <h2 className="text-xl font-semibold mb-4">
+                    {/* Bar Chart (User Distribution) */}
+                    <div className="bg-[#303030] p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                        <h2 className="text-xl font-semibold mb-4 text-gray-100">
                             User Distribution
                         </h2>
                         <ResponsiveContainer width="100%" height={300}>
@@ -343,9 +358,9 @@ export default function OverviewPage() {
                 </div>
 
                 {/* User Growth Chart */}
-                <div className="bg-gray-800 p-6 rounded-lg shadow-lg mt-10 hover:shadow-xl transition-shadow duration-300">
+                <div className="bg-[#303030] p-6 rounded-lg shadow-md mt-8 hover:shadow-xl transition-shadow duration-300">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">
+                        <h2 className="text-xl font-semibold text-gray-100">
                             User Growth Over Time
                         </h2>
                         <select
@@ -378,14 +393,14 @@ export default function OverviewPage() {
                             <Line
                                 type="monotone"
                                 dataKey="users"
-                                stroke="#8884d8"
+                                stroke="#5A61F0" // Lighter purple stroke
                                 strokeWidth={2}
-                                dot={{ fill: "#8884d8" }}
+                                dot={{ fill: "#5A61F0" }}
                             />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
-            </div>
+            </main>
             <Footer />
         </div>
     );

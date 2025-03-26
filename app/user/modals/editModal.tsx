@@ -1,16 +1,33 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { FaTimes } from "react-icons/fa";
 
 interface EditModalProps {
   isOpen: boolean;
-  user: { id: BigInt; username: string; email: string, role: string, membership: string} | null;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  user:
+    | {
+        id: bigint;
+        username: string;
+        email: string;
+        role: string;
+        membership: string;
+      }
+    | null;
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   closeEditModal: () => void;
   saveChanges: () => void;
 }
 
-const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, closeEditModal, saveChanges }) => {
+const EditModal: React.FC<EditModalProps> = ({
+  isOpen,
+  user,
+  handleChange,
+  closeEditModal,
+  saveChanges,
+}) => {
   const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,7 +45,9 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     handleChange(e);
     if (e.target.name === "email") {
       validateEmail(e.target.value);
@@ -38,12 +57,22 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Update User</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      <div className="relative w-full max-w-md p-6 bg-gray-900 text-white rounded-lg shadow-lg ring-1 ring-white ring-opacity-5 transform transition-all">
+        {/* Close Button */}
+        <button
+          onClick={closeEditModal}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition"
+        >
+          <FaTimes size={18} />
+        </button>
 
+        {/* Modal Title */}
+        <h2 className="text-2xl font-bold mb-6 text-center">Update User</h2>
+
+        {/* Name Field */}
         <div className="mb-4">
-          <label className="block text-sm">Name</label>
+          <label className="block text-sm mb-1">Name</label>
           <input
             type="text"
             name="username"
@@ -53,8 +82,9 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           />
         </div>
 
+        {/* Email Field */}
         <div className="mb-4">
-          <label className="block text-sm">Email</label>
+          <label className="block text-sm mb-1">Email</label>
           <input
             type="email"
             name="email"
@@ -62,11 +92,14 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
             onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
+          {emailError && (
+            <p className="text-red-500 text-sm mt-1">{emailError}</p>
+          )}
         </div>
 
+        {/* Role Field */}
         <div className="mb-4">
-          <label className="block text-sm">Role</label>
+          <label className="block text-sm mb-1">Role</label>
           <select
             name="role"
             value={user.role}
@@ -79,8 +112,9 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           </select>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm">Membership</label>
+        {/* Membership Field */}
+        <div className="mb-6">
+          <label className="block text-sm mb-1">Membership</label>
           <select
             name="membership"
             value={user.membership}
@@ -92,17 +126,18 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, user, handleChange, close
           </select>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <button
             onClick={closeEditModal}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition"
           >
             Cancel
           </button>
           <button
             onClick={saveChanges}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-            disabled={!!emailError} // Disable save button if email is invalid
+            className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 transition disabled:opacity-50"
+            disabled={!!emailError} // Disable if invalid email
           >
             Save
           </button>

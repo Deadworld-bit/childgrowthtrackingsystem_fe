@@ -1,27 +1,16 @@
 // FOOTER SECTION
 export const FOOTER_LINKS = [
     {
-        title: "Learn More",
-        links: [
-            "About App",
-            "Press Releases",
-            "Environment",
-            "Jobs",
-            "Privacy Policy",
-            "Contact Us",
-        ],
-    },
-    {
-        title: "Our Community",
-        links: ["Climbing xixixi", "Hiking hilink", "Hilink kinthill"],
+        title: "My Profile Links",
+        links: ["www.linkedin.com/in/thanhducdev", "https://github.com/Deadworld-bit"],
     },
 ];
 
 export const FOOTER_CONTACT_INFO = {
-    title: "Contact Us",
+    title: "Contact Me",
     links: [
-        { label: "Admin Officer", value: "123-456-7890" },
-        { label: "Email Officer", value: "sold@akinthil.com" },
+        { label: "Phone", value: "0977346713" },
+        { label: "Email", value: "phanthanhduc27949@gmail.com" },
     ],
 };
 

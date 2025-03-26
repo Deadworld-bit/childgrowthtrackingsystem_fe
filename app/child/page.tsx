@@ -14,7 +14,7 @@ import Link from "next/link";
 import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
 import CreateModal from "./modals/createModal";
-import SetDoctorModal from "./modals/setDoctorModal"; // Import SetDoctorModal
+import SetDoctorModal from "./modals/setDoctorModal";
 import childApi, { Child } from "@/app/api/child";
 import userApi, { User } from "@/app/api/user";
 import Cookies from "js-cookie";
@@ -26,7 +26,7 @@ export default function ChildPage() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isSetDoctorModalOpen, setIsSetDoctorModalOpen] = useState(false); // State for Set Doctor Modal
+    const [isSetDoctorModalOpen, setIsSetDoctorModalOpen] = useState(false);
     const [editingChild, setEditingChild] = useState<Child | null>(null);
     const [deletingChild, setDeletingChild] = useState<Child | null>(null);
     const [creatingChild, setCreatingChild] = useState<Partial<Child>>({});
@@ -35,12 +35,13 @@ export default function ChildPage() {
     const [filter, setFilter] = useState("haveDoctor");
     const [isLoading, setIsLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
-    const [doctors, setDoctors] = useState<User[]>([]); // State to store doctors
-    const [selectedChild, setSelectedChild] = useState<Child | null>(null); // State to store selected child for setting doctor
+    const [doctors, setDoctors] = useState<User[]>([]);
+    const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+
+    const totalPages = Math.ceil(children.length / USERS_PER_PAGE);
 
     // Fetch user's role and ID from cookies
     useEffect(() => {
@@ -49,14 +50,10 @@ export default function ChildPage() {
             if (user) {
                 try {
                     const parsedUser = JSON.parse(user);
-                    console.log("Parsed User from Cookie:", parsedUser);
-
-                    // Fetch user data using getUserById API
+                    // Fetch user data from API to get the latest role info
                     const userData = await userApi.getUserById(parsedUser.id);
-                    console.log("Fetched User Data:", userData);
-
-                    setUserRole(userData.role); // Set user role from API response
-                    setUserId(userData.id.toString()); 
+                    setUserRole(userData.role);
+                    setUserId(userData.id.toString());
                 } catch (error) {
                     console.error("Error fetching user data:", error);
                 }
@@ -69,6 +66,7 @@ export default function ChildPage() {
         fetchUserData();
     }, []);
 
+    // Fetch children whenever filter, userRole, or userId changes
     useEffect(() => {
         fetchChildren();
     }, [filter, userRole, userId]);
@@ -105,6 +103,7 @@ export default function ChildPage() {
         }
     };
 
+    // Filter & Pagination
     const startIndex = (currentPage - 1) * USERS_PER_PAGE;
     const filteredChildren = children.filter(
         (child) =>
@@ -125,6 +124,7 @@ export default function ChildPage() {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
 
+    // Create Child
     const openCreateModal = () => {
         setCreatingChild({});
         setIsCreateModalOpen(true);
@@ -135,12 +135,6 @@ export default function ChildPage() {
         setCreatingChild({});
     };
 
-    const handleCreateChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
-        setCreatingChild({ ...creatingChild, [e.target.name]: e.target.value });
-    };
-
     const saveNewChild = async () => {
         if (!userId) {
             console.error("Parent ID is missing. Please log in again.");
@@ -148,15 +142,11 @@ export default function ChildPage() {
         }
 
         try {
-            // Add parentId from the fetched user data
             const newChildData = {
                 ...creatingChild,
                 dob: creatingChild.dob ? creatingChild.dob.toString() : "",
-                parentId: parseInt(userId), // Use userId as parentId
+                parentId: parseInt(userId),
             };
-
-            console.log("Creating child with data:", newChildData);
-
             const newChild = await childApi.createChild(
                 newChildData as {
                     name: string;
@@ -165,8 +155,6 @@ export default function ChildPage() {
                     parentId: number;
                 }
             );
-
-            // Add the newly created child to the list
             setChildren([...children, newChild]);
             setSuccessMessage("Child created successfully!");
             closeCreateModal();
@@ -176,6 +164,7 @@ export default function ChildPage() {
         }
     };
 
+    // Edit Child
     const openEditModal = (child: Child) => {
         setEditingChild(child);
         setIsEditModalOpen(true);
@@ -225,6 +214,7 @@ export default function ChildPage() {
         }
     };
 
+    // Delete Child
     const openDeleteModal = (child: Child) => {
         setDeletingChild(child);
         setIsDeleteModalOpen(true);
@@ -239,9 +229,7 @@ export default function ChildPage() {
         if (deletingChild) {
             try {
                 await childApi.deleteChild(deletingChild.id);
-                setChildren(
-                    children.filter((child) => child.id !== deletingChild.id)
-                );
+                setChildren(children.filter((c) => c.id !== deletingChild.id));
                 setSuccessMessage("Child deleted successfully!");
                 closeDeleteModal();
                 setTimeout(() => setSuccessMessage(null), 3000);
@@ -251,6 +239,7 @@ export default function ChildPage() {
         }
     };
 
+    // Set Doctor
     const openSetDoctorModal = (child: Child) => {
         setSelectedChild(child);
         fetchDoctors();
@@ -264,7 +253,6 @@ export default function ChildPage() {
 
     const handleSetDoctor = async (doctorId: bigint) => {
         if (!selectedChild || !selectedChild.id) {
-            // Check if selectedChild is null or undefined
             console.error("No child selected for setting a doctor.");
             setSuccessMessage("Failed to set doctor. No child selected.");
             setTimeout(() => setSuccessMessage(null), 3000);
@@ -273,7 +261,7 @@ export default function ChildPage() {
 
         try {
             const updatedChild = await childApi.setDoctor(
-                selectedChild.id, // Use selectedChild.id
+                selectedChild.id,
                 doctorId
             );
             setChildren(
@@ -291,6 +279,7 @@ export default function ChildPage() {
         }
     };
 
+    // Loading or Access Denied
     if (isRoleLoading) {
         return (
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
@@ -325,7 +314,7 @@ export default function ChildPage() {
             className="flex flex-col min-h-screen text-white"
             style={{
                 background: "linear-gradient(to bottom, #1e1e1e, #121212)",
-                backgroundImage: "url('/parttern.jpg')",
+                backgroundImage: "url('/parttern02.jpg')",
                 backgroundSize: "cover",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
@@ -334,61 +323,74 @@ export default function ChildPage() {
         >
             <Navbar />
 
-            <main className="flex-grow px-4 md:px-8 lg:px-16">
-                <h1 className="text-3xl font-bold my-6 text-left">
-                    Child Management
-                </h1>
+            <main className="flex-grow px-4 md:px-8 lg:px-16 py-6">
+                {/* Page Header */}
+                <div className="mb-6">
+                    <h1 className="text-3xl md:text-4xl font-bold">
+                        Child Management
+                    </h1>
+                    <p className="text-gray-300 mt-2">
+                        Manage your site&apos;s children with ease.
+                    </p>
+                </div>
+                <div className="mb-6 p-6 bg-[#1E1E1E] rounded-lg shadow-md">
+                    {/* Admin Filter & Create Button */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            {userRole !== "DOCTOR" && (
+                                <button
+                                    onClick={openCreateModal}
+                                    className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2"
+                                >
+                                    <FaPlus />
+                                    <span>Create New Child</span>
+                                </button>
+                            )}
+                            {userRole === "ADMIN" && (
+                                <select
+                                    value={filter}
+                                    onChange={(e) => setFilter(e.target.value)}
+                                    className="px-4 py-2 rounded-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="haveDoctor">
+                                        Children with Doctor
+                                    </option>
+                                    <option value="dontHaveDoctor">
+                                        Children without Doctor
+                                    </option>
+                                </select>
+                            )}
+                        </div>
 
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex gap-4">
-                        {userRole !== "DOCTOR" && (
-                            <button
-                                onClick={openCreateModal}
-                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2"
-                            >
-                                <FaPlus /> Create New Child
-                            </button>
-                        )}
-                        {userRole === "ADMIN" && (
-                            <select
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="haveDoctor">
-                                    Children with Doctor
-                                </option>
-                                <option value="dontHaveDoctor">
-                                    Children without Doctor
-                                </option>
-                            </select>
-                        )}
+                        {/* Search */}
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
                 </div>
 
+                {/* Success Message */}
                 {successMessage && (
-                    <div className="mb-4 p-4 bg-green-500 text-white rounded-lg">
+                    <div className="mb-6 p-4 bg-green-500 text-white rounded-lg">
                         {successMessage}
                     </div>
                 )}
 
-                <div className="overflow-x-auto">
+                {/* Table Container */}
+                <div className="overflow-x-auto bg-[#1E1E1E] rounded-lg shadow-md">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <div className="loader"></div>
+                            <p>Loading...</p>
                         </div>
                     ) : (
                         <>
                             {displayedChildren.length > 0 ? (
-                                <table className="w-full table-auto border border-gray-600 bg-[#1E1E1E] shadow-lg">
-                                    <thead className="bg-gray-800 text-white text-lg">
+                                <table className="w-full table-auto border-collapse">
+                                    <thead className="bg-gray-900">
                                         <tr>
                                             <th className="p-4 text-left w-[5%]">
                                                 #
@@ -413,13 +415,12 @@ export default function ChildPage() {
                                             </th>
                                         </tr>
                                     </thead>
-
-                                    <tbody className="text-white text-lg">
+                                    <tbody>
                                         {displayedChildren.map(
                                             (child, index) => (
                                                 <tr
                                                     key={child.id.toString()}
-                                                    className="border-b border-gray-600 bg-[#2D2D2D] hover:bg-[#3A3A3A]"
+                                                    className="border-b border-gray-700 hover:bg-gray-700 transition-colors"
                                                 >
                                                     <td className="p-4">
                                                         {startIndex + index + 1}
@@ -447,57 +448,63 @@ export default function ChildPage() {
                                                               ).toLocaleDateString()
                                                             : "N/A"}
                                                     </td>
-                                                    <td className="p-4 flex gap-3">
-                                                        {userRole !==
-                                                            "DOCTOR" && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        openEditModal(
-                                                                            child
-                                                                        )
-                                                                    }
-                                                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center gap-2"
-                                                                >
-                                                                    <FaEdit />{" "}
-                                                                    Update
-                                                                </button>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        openDeleteModal(
-                                                                            child
-                                                                        )
-                                                                    }
-                                                                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
-                                                                >
-                                                                    <FaTrash />{" "}
-                                                                    Delete
-                                                                </button>
-                                                                {userRole ===
-                                                                    "ADMIN" &&
-                                                                    !child.doctorId && (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                openSetDoctorModal(
-                                                                                    child
-                                                                                )
-                                                                            }
-                                                                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center gap-2"
-                                                                        >
-                                                                            <FaUserMd />{" "}
-                                                                            Doctor
-                                                                        </button>
-                                                                    )}
-                                                            </>
-                                                        )}
-                                                        <Link
-                                                            href={`/child/detail/${child.id}`}
-                                                        >
-                                                            <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2">
-                                                                <FaInfoCircle />{" "}
+                                                    <td className="p-4">
+                                                        {/* Two-column grid for action buttons */}
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {userRole !==
+                                                                "DOCTOR" && (
+                                                                <>
+                                                                    {/* Update Button */}
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            openEditModal(
+                                                                                child
+                                                                            )
+                                                                        }
+                                                                        className="flex items-center justify-center gap-1 px-2 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition text-sm"
+                                                                    >
+                                                                        <FaEdit />
+                                                                        Update
+                                                                    </button>
+                                                                    {/* Delete Button */}
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            openDeleteModal(
+                                                                                child
+                                                                            )
+                                                                        }
+                                                                        className="flex items-center justify-center gap-1 px-2 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition text-sm"
+                                                                    >
+                                                                        <FaTrash />
+                                                                        Delete
+                                                                    </button>
+                                                                    {/* Doctor Button (Admin only, child has no doctor) */}
+                                                                    {userRole ===
+                                                                        "ADMIN" &&
+                                                                        !child.doctorId && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    openSetDoctorModal(
+                                                                                        child
+                                                                                    )
+                                                                                }
+                                                                                className="flex items-center justify-center gap-1 px-2 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition text-sm"
+                                                                            >
+                                                                                <FaUserMd />
+                                                                                Doctor
+                                                                            </button>
+                                                                        )}
+                                                                </>
+                                                            )}
+                                                            {/* Detail Button */}
+                                                            <Link
+                                                                href={`/child/detail/${child.id}`}
+                                                                className="flex items-center justify-center gap-1 px-2 py-2 bg-gray-500 hover:bg-gray-600 rounded-lg transition text-sm"
+                                                            >
+                                                                <FaInfoCircle />
                                                                 Detail
-                                                            </button>
-                                                        </Link>
+                                                            </Link>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             )
@@ -506,7 +513,7 @@ export default function ChildPage() {
                                 </table>
                             ) : (
                                 <div className="flex justify-center items-center h-64">
-                                    <p className="text-lg">
+                                    <p className="text-lg text-gray-300">
                                         No children found.
                                     </p>
                                 </div>
@@ -514,37 +521,40 @@ export default function ChildPage() {
                         </>
                     )}
                 </div>
-                <div className="flex justify-center items-center mt-6 gap-4">
-                    <button
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className={`px-4 py-2 rounded-lg text-white ${
-                            currentPage === 1
-                                ? "bg-gray-700 cursor-not-allowed"
-                                : "bg-blue-500 hover:bg-blue-600"
-                        }`}
-                    >
-                        Previous
-                    </button>
 
-                    <span className="text-lg font-semibold">
-                        Page {currentPage} of {totalPages}
-                    </span>
-
-                    <button
-                        onClick={nextPage}
-                        disabled={currentPage === totalPages}
-                        className={`px-4 py-2 rounded-lg text-white ${
-                            currentPage === totalPages
-                                ? "bg-gray-700 cursor-not-allowed"
-                                : "bg-blue-500 hover:bg-blue-600"
-                        }`}
-                    >
-                        Next
-                    </button>
-                </div>
+                {/* Pagination */}
+                {displayedChildren.length > 0 && (
+                    <div className="flex justify-center items-center mt-6 gap-6">
+                        <button
+                            onClick={prevPage}
+                            disabled={currentPage === 1}
+                            className={`px-4 py-2 rounded-lg text-white transition ${
+                                currentPage === 1
+                                    ? "bg-gray-700 cursor-not-allowed"
+                                    : "bg-blue-500 hover:bg-blue-600"
+                            }`}
+                        >
+                            Previous
+                        </button>
+                        <span className="text-lg font-semibold">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={nextPage}
+                            disabled={currentPage === totalPages}
+                            className={`px-4 py-2 rounded-lg text-white transition ${
+                                currentPage === totalPages
+                                    ? "bg-gray-700 cursor-not-allowed"
+                                    : "bg-blue-500 hover:bg-blue-600"
+                            }`}
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </main>
 
+            {/* Create Modal */}
             <CreateModal
                 isOpen={isCreateModalOpen}
                 child={creatingChild}
@@ -558,6 +568,7 @@ export default function ChildPage() {
                 saveChanges={saveNewChild}
             />
 
+            {/* Edit Modal */}
             <EditModal
                 isOpen={isEditModalOpen}
                 child={editingChild}
@@ -566,6 +577,7 @@ export default function ChildPage() {
                 saveChanges={saveChanges}
             />
 
+            {/* Delete Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 child={deletingChild}
@@ -573,6 +585,7 @@ export default function ChildPage() {
                 handleDelete={handleDelete}
             />
 
+            {/* Set Doctor Modal */}
             <SetDoctorModal
                 isOpen={isSetDoctorModalOpen}
                 doctors={doctors}

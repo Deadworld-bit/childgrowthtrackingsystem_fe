@@ -1,8 +1,8 @@
 "use client";
 
-import Footer from "@/sections/Footer";
-import Navbar from "@/sections/Navbar";
 import React, { useState, useEffect } from "react";
+import Navbar from "@/sections/Navbar";
+import Footer from "@/sections/Footer";
 import userApi from "../api/user";
 import feedbackApi from "../api/feedback";
 import Cookies from "js-cookie";
@@ -15,9 +15,9 @@ interface Doctor {
     rating: number;
 }
 
-const FeedbackPage = () => {
-    const [doctors, setDoctors] = useState<Doctor[]>([]); // List of doctors with ratings
-    const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]); // Filtered list of doctors
+export default function FeedbackPage() {
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
     const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
     const [doctorFeedbacks, setDoctorFeedbacks] = useState<
         {
@@ -27,32 +27,30 @@ const FeedbackPage = () => {
             rating: number;
             date: string;
         }[]
-    >([]); // Feedback for the selected doctor
-    const [currentPage, setCurrentPage] = useState(1); // Current page for paging
-    const [ratingFilter, setRatingFilter] = useState(0); // Minimum rating filter
-    const [searchQuery, setSearchQuery] = useState(""); // Search query for doctor names
+    >([]);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [ratingFilter, setRatingFilter] = useState(0);
+    const [searchQuery, setSearchQuery] = useState("");
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [userId, setUserId] = useState<number | null>(null); // User ID from API
+    const [userId, setUserId] = useState<number | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
 
-    const [newFeedback, setNewFeedback] = useState(""); // New feedback description
-    const [newRating, setNewRating] = useState<number>(0); // New feedback rating
+    const [newFeedback, setNewFeedback] = useState("");
+    const [newRating, setNewRating] = useState<number>(0);
 
-    const doctorsPerPage = 5; // Number of doctors to show per page
+    const doctorsPerPage = 5;
+    const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
-    // Fetch user's role from cookies
+    // Fetch user role and ID from cookies
     useEffect(() => {
         const fetchUserData = async () => {
             const user = Cookies.get("user");
             if (user) {
                 try {
                     const parsedUser = JSON.parse(user);
-                    console.log("Parsed User from Cookie:", parsedUser);
-
-                    // Fetch user data using getUserById API
+                    // Fetch user data from API to get the latest role info
                     const userData = await userApi.getUserById(parsedUser.id);
-                    console.log("Fetched User Data:", userData);
-
                     setUserRole(userData.role);
                     setUserId(Number(userData.id));
                 } catch (error) {
@@ -91,6 +89,7 @@ const FeedbackPage = () => {
             setDoctors(doctorsWithRatings);
             setFilteredDoctors(doctorsWithRatings);
 
+            // Select the first doctor by default if available
             if (doctorsWithRatings.length > 0) {
                 setSelectedDoctor(doctorsWithRatings[0].id);
                 fetchDoctorFeedbacks(doctorsWithRatings[0].id);
@@ -124,28 +123,18 @@ const FeedbackPage = () => {
     const handleNewFeedbackSubmit = async () => {
         if (!selectedDoctor) {
             alert("Please select a doctor to leave feedback.");
-            console.log("Selected Doctor is null or undefined.");
             return;
         }
-
         if (newRating < 1 || newRating > 5) {
             alert("Please provide a rating between 1 and 5.");
             return;
         }
-
         if (!userId) {
             alert("User ID not found. Please log in again.");
             return;
         }
 
         try {
-            console.log("Submitting feedback with data:", {
-                doctorId: selectedDoctor,
-                parentId: userId,
-                description: newFeedback,
-                rating: newRating,
-            });
-
             await feedbackApi.createFeedback({
                 doctorId: selectedDoctor,
                 parentId: userId,
@@ -167,12 +156,13 @@ const FeedbackPage = () => {
         fetchDoctorsWithRatings();
     }, []);
 
-    const handleDoctorClick = async (doctorId: number) => {
-        console.log("Doctor clicked with ID:", doctorId);
+    // Handle doctor selection
+    const handleDoctorClick = (doctorId: number) => {
         setSelectedDoctor(doctorId);
         fetchDoctorFeedbacks(doctorId);
     };
 
+    // Handle rating filter
     const handleRatingFilterChange = (rating: number) => {
         setRatingFilter(rating);
         const filtered = doctors.filter((doctor) => doctor.rating >= rating);
@@ -180,6 +170,7 @@ const FeedbackPage = () => {
         setCurrentPage(1);
     };
 
+    // Handle search
     const handleSearchChange = (query: string) => {
         setSearchQuery(query);
         const filtered = doctors.filter((doctor) =>
@@ -189,14 +180,13 @@ const FeedbackPage = () => {
         setCurrentPage(1);
     };
 
+    // Pagination
     const indexOfLastDoctor = currentPage * doctorsPerPage;
     const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
     const currentDoctors = filteredDoctors.slice(
         indexOfFirstDoctor,
         indexOfLastDoctor
     );
-
-    const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
     if (isRoleLoading) {
         return (
@@ -206,6 +196,7 @@ const FeedbackPage = () => {
         );
     }
 
+    // Access control
     if (userRole !== "ADMIN" && userRole !== "MEMBER") {
         return (
             <div className="flex flex-col min-h-screen text-white items-center justify-center bg-gray-900">
@@ -228,7 +219,7 @@ const FeedbackPage = () => {
             className="flex flex-col min-h-screen text-white"
             style={{
                 background: "linear-gradient(to bottom, #1e1e1e, #121212)",
-                backgroundImage: "url('/parttern.jpg')",
+                backgroundImage: "url('/parttern02.jpg')",
                 backgroundSize: "cover",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
@@ -236,22 +227,19 @@ const FeedbackPage = () => {
             }}
         >
             <Navbar />
-            <div className="min-h-screen bg-gray-900 p-8">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 bg-gray-800 shadow-lg rounded-lg overflow-hidden">
-                    {/* Left Side: Doctor List */}
-                    <div className="bg-gray-700 p-8 rounded-lg">
-                        <h2 className="text-3xl font-semibold text-white mb-6">
-                            Doctors
-                        </h2>
-
-                        {/* Search Input */}
-                        <div className="mb-6">
-                            <label className="block text-lg font-medium text-gray-300 mb-2">
+            <main className="flex-grow p-6 md:p-8 lg:p-12">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Left Side: Doctor List + Search & Filter */}
+                    <div className="bg-[#1E1E1E] rounded-lg shadow-lg p-6">
+                        <h2 className="text-2xl font-bold mb-6">Doctors</h2>
+                        {/* Search */}
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-2 font-semibold">
                                 Search by Name:
                             </label>
                             <input
                                 type="text"
-                                className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Search for a doctor..."
                                 value={searchQuery}
                                 onChange={(e) =>
@@ -259,14 +247,13 @@ const FeedbackPage = () => {
                                 }
                             />
                         </div>
-
                         {/* Rating Filter */}
-                        <div className="mb-6">
-                            <label className="block text-lg font-medium text-gray-300 mb-2">
+                        <div className="mb-4">
+                            <label className="block text-gray-300 mb-2 font-semibold">
                                 Filter by Rating:
                             </label>
                             <select
-                                className="w-full p-3 border border-gray-600 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={ratingFilter}
                                 onChange={(e) =>
                                     handleRatingFilterChange(
@@ -279,20 +266,19 @@ const FeedbackPage = () => {
                                 <option value={4.5}>4.5 and above</option>
                             </select>
                         </div>
-
                         {/* Doctor List */}
                         <ul className="space-y-4">
                             {currentDoctors.map((doctor) => (
                                 <li
                                     key={doctor.id}
-                                    className={`p-4 border rounded-lg cursor-pointer ${
+                                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                                         selectedDoctor === doctor.id
                                             ? "bg-blue-600 border-blue-500"
-                                            : "bg-gray-800 border-gray-600"
-                                    } hover:shadow-md transition duration-200`}
+                                            : "bg-gray-800 border-gray-700"
+                                    } hover:shadow-md`}
                                     onClick={() => handleDoctorClick(doctor.id)}
                                 >
-                                    <h3 className="text-xl font-bold text-white">
+                                    <h3 className="text-xl font-semibold">
                                         {doctor.name}
                                     </h3>
                                     <p className="text-sm text-gray-400">
@@ -309,11 +295,10 @@ const FeedbackPage = () => {
                                 </li>
                             ))}
                         </ul>
-
                         {/* Pagination */}
                         <div className="mt-8 flex justify-between items-center">
                             <button
-                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                                 onClick={() =>
                                     setCurrentPage((prev) =>
                                         Math.max(prev - 1, 1)
@@ -327,7 +312,7 @@ const FeedbackPage = () => {
                                 Page {currentPage} of {totalPages}
                             </span>
                             <button
-                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                                 onClick={() =>
                                     setCurrentPage((prev) =>
                                         Math.min(prev + 1, totalPages)
@@ -340,72 +325,77 @@ const FeedbackPage = () => {
                         </div>
                     </div>
 
-                    {/* Right Side: Doctor Feedback and Create Feedback Form */}
-                    <div className="bg-gray-700 p-8 rounded-lg">
-                        <h2 className="text-3xl font-semibold text-white mb-6">
+                    {/* Right Side: Doctor Feedback + Form */}
+                    <div className="bg-[#1E1E1E] rounded-lg shadow-lg p-6">
+                        <h2 className="text-2xl font-bold mb-6">
                             Feedback for{" "}
                             {doctors.find((doc) => doc.id === selectedDoctor)
                                 ?.name || "Doctor"}
                         </h2>
-                        {doctorFeedbacks.length > 0 ? (
-                            <ul className="space-y-4">
-                                {doctorFeedbacks.map((feedback) => (
-                                    <li
-                                        key={feedback.id}
-                                        className="p-4 border border-gray-600 rounded-lg bg-gray-800 hover:shadow-md transition duration-200"
-                                    >
-                                        <p className="text-gray-300">
-                                            {feedback.feedback}
-                                        </p>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <div className="flex items-center space-x-1">
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <span
-                                                        key={star}
-                                                        className={`text-lg ${
-                                                            feedback.rating >=
-                                                            star
-                                                                ? "text-yellow-500"
-                                                                : "text-gray-600"
-                                                        }`}
-                                                    >
-                                                        ★
-                                                    </span>
-                                                ))}
+                        {/* Feedback List */}
+                        <div className="mb-6">
+                            {doctorFeedbacks.length > 0 ? (
+                                <ul className="space-y-4">
+                                    {doctorFeedbacks.map((feedback) => (
+                                        <li
+                                            key={feedback.id}
+                                            className="p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition"
+                                        >
+                                            <p className="text-gray-300">
+                                                {feedback.feedback}
+                                            </p>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <div className="flex items-center space-x-1">
+                                                    {[1, 2, 3, 4, 5].map(
+                                                        (star) => (
+                                                            <span
+                                                                key={star}
+                                                                className={`text-lg ${
+                                                                    feedback.rating >=
+                                                                    star
+                                                                        ? "text-yellow-500"
+                                                                        : "text-gray-600"
+                                                                }`}
+                                                            >
+                                                                ★
+                                                            </span>
+                                                        )
+                                                    )}
+                                                </div>
+                                                <span className="text-sm text-gray-400">
+                                                    {feedback.user} -{" "}
+                                                    {feedback.date}
+                                                </span>
                                             </div>
-                                            <span className="text-sm text-gray-400">
-                                                {feedback.user} -{" "}
-                                                {feedback.date}
-                                            </span>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-400">
-                                No feedback available for this doctor.
-                            </p>
-                        )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-gray-400">
+                                    No feedback available for this doctor.
+                                </p>
+                            )}
+                        </div>
 
-                        {/* New Feedback Form */}
-                        {userRole !== "ADMIN" && (
-                            <div className="mt-8 p-4 bg-gray-800 rounded-lg">
-                                <h3 className="text-lg font-semibold text-white mb-4">
+                        {/* New Feedback Form (Members only) */}
+                        {userRole === "MEMBER" && (
+                            <div className="bg-gray-800 rounded-lg p-4">
+                                <h3 className="text-lg font-semibold mb-4">
                                     Leave Feedback
                                 </h3>
                                 <textarea
-                                    className="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                    className="w-full p-3 mb-4 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Write your feedback here..."
                                     value={newFeedback}
                                     onChange={(e) =>
                                         setNewFeedback(e.target.value)
                                     }
                                 ></textarea>
-                                <label className="block text-lg font-medium text-gray-300 mb-2">
+                                <label className="block text-gray-300 font-semibold mb-2">
                                     Rating:
                                 </label>
                                 <select
-                                    className="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                    className="w-full p-3 mb-4 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={newRating}
                                     onChange={(e) =>
                                         setNewRating(Number(e.target.value))
@@ -428,10 +418,8 @@ const FeedbackPage = () => {
                         )}
                     </div>
                 </div>
-            </div>
+            </main>
             <Footer />
         </div>
     );
-};
-
-export default FeedbackPage;
+}
