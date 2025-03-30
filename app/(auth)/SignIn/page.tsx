@@ -100,12 +100,12 @@ const Page = () => {
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-              <Link
+              {/* <Link
                 className="text-sm text-blue-400 hover:underline block text-right mt-2"
                 href="/Reset-Password"
               >
                 Forgot password?
-              </Link>
+              </Link> */}
             </div>
             <button className="w-full py-3 rounded-lg bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-semibold shadow-lg transition-transform transform hover:scale-105">
               Sign in

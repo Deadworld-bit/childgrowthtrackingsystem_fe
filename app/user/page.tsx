@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaInfoCircle, FaUserMd } from "react-icons/fa";
+import {
+    FaEdit,
+    FaPlus,
+    FaTrash,
+    FaInfoCircle,
+    FaUserMd,
+} from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
+import CreateUserModal from "./modals/createModal";
 import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
 import ProfileModal from "./modals/profileModal";
@@ -16,6 +23,8 @@ const USERS_PER_PAGE = 9;
 
 export default function UserPage() {
     const [users, setUsers] = useState<User[]>([]);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [creatingUser, setCreatingUser] = useState<Partial<User>>({});
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -100,6 +109,46 @@ export default function UserPage() {
 
     const prevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
+
+    // Create User
+    const openCreateModal = () => {
+        setCreatingUser({});
+        setIsCreateModalOpen(true);
+    };
+
+    const closeCreateModal = () => {
+        setIsCreateModalOpen(false);
+        setCreatingUser({});
+    };
+
+    // Create User
+    const saveNewUser = async () => {
+        try {
+            const newUserData = {
+                ...creatingUser,
+            };
+            const response = await userApi.createUser(
+                newUserData as {
+                    username: string;
+                    email: string;
+                    password: string;
+                    role: string;
+                }
+            );
+
+            if (response.status === "success" && response.data) {
+                setUsers([...users, response.data]);
+                setSuccessMessage(response.message);
+            } else {
+                setSuccessMessage("Failed to create user");
+            }
+
+            closeCreateModal();
+            setTimeout(() => setSuccessMessage(null), 3000);
+        } catch (error) {
+            console.error("Error creating user:", error);
+        }
     };
 
     // Edit Modal
@@ -235,29 +284,44 @@ export default function UserPage() {
                 </div>
 
                 {/* Filter & Search */}
-                <div className="mb-6 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="userType" className="text-lg">
-                            User Type:
-                        </label>
-                        <select
-                            id="userType"
-                            value={userType}
-                            onChange={(e) => setUserType(e.target.value)}
-                            className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="members">Members</option>
-                            <option value="doctors">Doctors</option>
-                        </select>
-                    </div>
-                    <div className="flex items-center">
-                        <input
-                            type="text"
-                            placeholder="Search by username or email..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                <div className="mb-6 p-6 bg-[#1E1E1E] rounded-lg shadow-md">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={openCreateModal}
+                                className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2"
+                            >
+                                <FaPlus />
+                                <span>Create New User</span>
+                            </button>
+                            <select
+                                id="userType"
+                                value={userType}
+                                onChange={(e) => setUserType(e.target.value)}
+                                className="px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="members">Members</option>
+                                <option value="doctors">Doctors</option>
+                            </select>
+                        </div>
+                        <form autoComplete="off">
+                            {/* Hidden dummy input to prevent autofill */}
+                            <input
+                                type="text"
+                                name="hidden-field"
+                                style={{ display: "none" }}
+                                autoComplete="username"
+                            />
+                            <input
+                                type="text"
+                                name="user-search"
+                                autoComplete="off"
+                                placeholder="Search by username or email..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </form>
                     </div>
                 </div>
 
@@ -408,6 +472,19 @@ export default function UserPage() {
             </main>
 
             {/* Modals */}
+            <CreateUserModal
+                isOpen={isCreateModalOpen}
+                user={creatingUser}
+                handleChange={(e) =>
+                    setCreatingUser({
+                        ...creatingUser,
+                        [e.target.name]: e.target.value,
+                    })
+                }
+                closeModal={closeCreateModal}
+                createUser={saveNewUser}
+            />
+
             <EditModal
                 isOpen={isEditModalOpen}
                 user={editingUser!}
