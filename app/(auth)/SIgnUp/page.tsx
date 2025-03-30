@@ -1,13 +1,13 @@
 "use client";
 
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import userApi from "@/app/api/user";
 import { useRouter } from "next/navigation";
 
-const Page = () => {
+function SignUpContent() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -306,6 +306,12 @@ const Page = () => {
       </div>
     </section>
   );
-};
+}
 
-export default Page;
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignUpContent />
+    </Suspense>
+  );
+}
