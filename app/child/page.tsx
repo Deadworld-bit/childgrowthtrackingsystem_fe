@@ -260,15 +260,17 @@ export default function ChildPage() {
         }
 
         try {
-            const updatedChild = await childApi.setDoctor(
-                selectedChild.id,
-                doctorId
-            );
+            await childApi.setDoctor(selectedChild.id, doctorId); // API returns null, so no need to store response
+
+            // Since API doesn't return updated child data, update manually if necessary
             setChildren(
                 children.map((child) =>
-                    child.id === updatedChild.id ? updatedChild : child
+                    child.id === selectedChild.id
+                        ? { ...child, doctorId }
+                        : child
                 )
             );
+
             setSuccessMessage("Doctor set successfully!");
             closeSetDoctorModal();
             setTimeout(() => setSuccessMessage(null), 3000);
@@ -397,17 +399,20 @@ export default function ChildPage() {
                                             <th className="p-4 text-left w-[5%]">
                                                 #
                                             </th>
-                                            <th className="p-4 text-left w-[20%]">
+                                            <th className="p-4 text-left w-[15%]">
                                                 Name
                                             </th>
-                                            <th className="p-4 text-left w-[15%]">
+                                            <th className="p-4 text-left w-[10%]">
                                                 DOB
                                             </th>
                                             <th className="p-4 text-left w-[10%]">
                                                 Gender
                                             </th>
-                                            <th className="p-4 text-left w-[20%]">
+                                            <th className="p-4 text-left w-[15%]">
                                                 Parent&apos;s Name
+                                            </th>
+                                            <th className="p-4 text-left w-[15%]">
+                                                Doctor&apos;s Name
                                             </th>
                                             <th className="p-4 text-left w-[15%]">
                                                 Created Date
@@ -442,6 +447,9 @@ export default function ChildPage() {
                                                     </td>
                                                     <td className="p-4">
                                                         {child.parentName}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {child.doctorName}
                                                     </td>
                                                     <td className="p-4">
                                                         {child.createDate

@@ -9,6 +9,7 @@ export interface Child {
     parentId: bigint;
     parentName: string;
     doctorId: bigint;
+    doctorName: string;
     createDate: Date;
     updateDate: Date;
     status: boolean;
@@ -94,16 +95,17 @@ const getChildByDoctorId = async (doctorId: bigint): Promise<Child[]> => {
 };
 
 // Set doctor for a child
-const setDoctor = async (id: bigint, doctorId: bigint): Promise<Child> => {
+const setDoctor = async (id: bigint, doctorId: bigint): Promise<void> => {
     try {
         const response = await api.put<{
             status: string;
             message: string;
-            data: Child;
+            data: null;
         }>(`/child/setDoctor/${id}`, null, {
             params: { doctorId: doctorId.toString() },
         });
-        return response.data.data;
+
+        console.log(response.data.message); // Optional: Log success message
     } catch (error) {
         console.error(`Error setting doctor for child with ID ${id}:`, error);
         throw error;
@@ -111,10 +113,19 @@ const setDoctor = async (id: bigint, doctorId: bigint): Promise<Child> => {
 };
 
 // Create a child
-const createChild = async (childData: {name: string; dob: string; gender: string; parentId: number; }): Promise<Child> => {
+const createChild = async (childData: {
+    name: string;
+    dob: string;
+    gender: string;
+    parentId: number;
+}): Promise<Child> => {
     try {
-        const response = await api.post<{status: string; message: string; data: Child; }>("/child/createChild", childData);
-        return response.data.data; 
+        const response = await api.post<{
+            status: string;
+            message: string;
+            data: Child;
+        }>("/child/createChild", childData);
+        return response.data.data;
     } catch (error) {
         console.error("Error creating child:", error);
         throw error;

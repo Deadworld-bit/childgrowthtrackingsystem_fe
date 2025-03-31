@@ -205,7 +205,7 @@ export default function OverviewPage() {
                         System Overview
                     </h1>
                     <p className="text-gray-200 text-lg">
-                        Get an at-a-glance view of key system metrics.
+                        Get a glance at the view of key system metrics.
                     </p>
                 </header>
 

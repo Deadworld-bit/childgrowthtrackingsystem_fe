@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface EditModalProps {
     isOpen: boolean;
@@ -15,6 +15,31 @@ const EditModal: React.FC<EditModalProps> = ({
     closeEditModal,
     saveChanges,
 }) => {
+    const [error, setError] = useState("");
+
+    const validateDate = (dob: string) => {
+        const currentDate = new Date();
+        const selectedDate = new Date(dob);
+        const age = currentDate.getFullYear() - selectedDate.getFullYear();
+        const monthDiff = currentDate.getMonth() - selectedDate.getMonth();
+        const dayDiff = currentDate.getDate() - selectedDate.getDate();
+
+        if (selectedDate > currentDate) {
+            setError("Date of birth cannot be in the future.");
+        } else if (
+            age > 18 || (age === 18 && (monthDiff > 0 || (monthDiff === 0 && dayDiff > 0)))
+        ) {
+            setError("The child must be under 18 years old.");
+        } else {
+            setError("");
+        }
+    };
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleChange(e);
+        validateDate(e.target.value);
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -37,9 +62,10 @@ const EditModal: React.FC<EditModalProps> = ({
                         type="date"
                         name="dob"
                         value={child.dob}
-                        onChange={handleChange}
+                        onChange={handleDateChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm">Gender</label>
@@ -62,7 +88,8 @@ const EditModal: React.FC<EditModalProps> = ({
                     </button>
                     <button
                         onClick={saveChanges}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                        disabled={!!error}
+                        className={`px-4 py-2 rounded-lg text-white ${error ? "bg-gray-500 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
                     >
                         Save
                     </button>
