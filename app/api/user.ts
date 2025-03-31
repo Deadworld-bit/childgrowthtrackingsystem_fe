@@ -13,9 +13,11 @@ export interface User {
     status: boolean;
     specialization: string;
     certificate: string;
+    childCount: number;
 }
 
 export interface Doctor {
+    id: bigint;
     specialization: string;
     certificate: string;
 }
@@ -34,11 +36,12 @@ const getMembers = async (): Promise<User[]> => {
 // Fetch all doctors
 const getDoctors = async (): Promise<(User & Doctor)[]> => {
     try {
-        const response = await api.get<{ status: string; message: string; data: { user: User; specialization: string; certificate: string }[] }>("/users/doctor");
+        const response = await api.get<{ status: string; message: string; data: { user: User; specialization: string; certificate: string; childCount: number }[] }>("/users/doctor");
         return response.data.data.map((item) => ({
             ...item.user,
             specialization: item.specialization,
             certificate: item.certificate,
+            childCount: item.childCount,
         }));
     } catch (error) {
         console.error("Error fetching doctors:", error);
@@ -50,6 +53,17 @@ const getDoctors = async (): Promise<(User & Doctor)[]> => {
 const getUserById = async (id: bigint): Promise<User> => {
     try {
         const response = await api.get<{ status: string; message: string; data: User }>(`/users/userid/${id}`);
+        return response.data.data;
+    } catch (error) {
+        console.error(`Error fetching user with ID ${id}:`, error);
+        throw error;
+    }
+};
+
+// Fetch user by ID
+const getDoctorById = async (id: bigint): Promise<Doctor> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: Doctor }>(`/users/doctor/${id}`);
         return response.data.data;
     } catch (error) {
         console.error(`Error fetching user with ID ${id}:`, error);
@@ -92,6 +106,7 @@ const userApi = {
     getMembers,
     getDoctors,
     getUserById,
+    getDoctorById,
     createUser,
     updateUser,
     deleteUser,

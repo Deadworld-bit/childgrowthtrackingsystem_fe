@@ -285,20 +285,6 @@ export default function OverviewPage() {
                                 </div>
                             </div>
                         </div>
-                        {/* Card 6 */}
-                        <div className="bg-gradient-to-r from-teal-400 to-teal-500 p-6 rounded-lg shadow-lg hover:scale-105 transition-transform duration-300">
-                            <div className="flex items-center gap-4">
-                                <FaChartLine className="text-4xl text-white" />
-                                <div>
-                                    <h3 className="text-lg font-semibold text-white">
-                                        Total Posts
-                                    </h3>
-                                    <p className="text-3xl font-bold mt-2 text-white">
-                                        {data.totalPosts}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
