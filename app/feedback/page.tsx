@@ -7,6 +7,7 @@ import userApi from "../api/user";
 import feedbackApi from "../api/feedback";
 import Cookies from "js-cookie";
 import Link from "next/link";
+import DeleteFeedbackModal from "../feedback/modals/deleteModal"; // Adjust the path as needed
 
 interface Doctor {
     id: number;
@@ -28,27 +29,38 @@ export default function FeedbackPage() {
             date: string;
         }[]
     >([]);
-
     const [currentPage, setCurrentPage] = useState(1);
     const [ratingFilter, setRatingFilter] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userId, setUserId] = useState<number | null>(null);
+    const [username, setUsername] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
-
     const [newFeedback, setNewFeedback] = useState("");
     const [newRating, setNewRating] = useState<number>(0);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [feedbackToDelete, setFeedbackToDelete] = useState<{ id: number; user: string } | null>(null);
+    const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
     const doctorsPerPage = 5;
     const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
-    // Fetch user role and ID from cookies
+    // Function to display notification messages
+    const showNotification = (message: string, type: "success" | "error") => {
+        setNotification({ message, type });
+        setTimeout(() => {
+            setNotification(null);
+        }, 3000);
+    };
+
+    // Fetch user role, ID, and username from cookies
     useEffect(() => {
         const fetchUserData = async () => {
             const user = Cookies.get("user");
             if (user) {
                 try {
                     const parsedUser = JSON.parse(user);
+                    setUsername(parsedUser.username);
                     // Fetch user data from API to get the latest role info
                     const userData = await userApi.getUserById(parsedUser.id);
                     setUserRole(userData.role);
@@ -71,9 +83,7 @@ export default function FeedbackPage() {
             const doctorData = await userApi.getDoctors();
             const doctorsWithRatings = await Promise.all(
                 doctorData.map(async (doctor: any) => {
-                    const rating = await feedbackApi.getDoctorRating(
-                        BigInt(doctor.id)
-                    );
+                    const rating = await feedbackApi.getDoctorRating(BigInt(doctor.id));
                     return {
                         id: doctor.id,
                         name: doctor.username || "Unknown Name",
@@ -102,9 +112,7 @@ export default function FeedbackPage() {
     // Fetch feedback for a specific doctor
     const fetchDoctorFeedbacks = async (doctorId: number) => {
         try {
-            const feedbacks = await feedbackApi.getFeedbackByDoctorId(
-                BigInt(doctorId)
-            );
+            const feedbacks = await feedbackApi.getFeedbackByDoctorId(BigInt(doctorId));
             setDoctorFeedbacks(
                 feedbacks.map((feedback) => ({
                     id: Number(feedback.id),
@@ -122,15 +130,15 @@ export default function FeedbackPage() {
     // Handle new feedback submission
     const handleNewFeedbackSubmit = async () => {
         if (!selectedDoctor) {
-            alert("Please select a doctor to leave feedback.");
+            showNotification("Please select a doctor to leave feedback.", "error");
             return;
         }
         if (newRating < 1 || newRating > 5) {
-            alert("Please provide a rating between 1 and 5.");
+            showNotification("Please provide a rating between 1 and 5.", "error");
             return;
         }
         if (!userId) {
-            alert("User ID not found. Please log in again.");
+            showNotification("User ID not found. Please log in again.", "error");
             return;
         }
 
@@ -145,11 +153,39 @@ export default function FeedbackPage() {
             fetchDoctorFeedbacks(selectedDoctor);
             setNewFeedback("");
             setNewRating(0);
-            alert("Feedback submitted successfully!");
+            showNotification("Feedback submitted successfully!", "success");
         } catch (error) {
             console.error("Error submitting feedback:", error);
-            alert("Failed to submit feedback. Please try again.");
+            showNotification("Failed to submit feedback. Please try again.", "error");
         }
+    };
+
+    // Handle feedback deletion with modal confirmation.
+    const handleDeleteFeedback = async (feedbackId: number) => {
+        try {
+            // Convert feedbackId to BigInt before sending to the API
+            await feedbackApi.deleteFeedback(BigInt(feedbackId));
+            // Update the feedback list after deletion
+            setDoctorFeedbacks((prevFeedbacks) =>
+                prevFeedbacks.filter((feedback) => feedback.id !== feedbackId)
+            );
+            showNotification("Feedback deleted successfully!", "success");
+        } catch (error) {
+            console.error("Error deleting feedback:", error);
+            showNotification("Failed to delete feedback. Please try again.", "error");
+        }
+    };
+
+    // Open modal with selected feedback
+    const openDeleteModal = (feedback: { id: number; user: string }) => {
+        setFeedbackToDelete(feedback);
+        setIsDeleteModalOpen(true);
+    };
+
+    // Close modal handler
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setFeedbackToDelete(null);
     };
 
     useEffect(() => {
@@ -183,10 +219,7 @@ export default function FeedbackPage() {
     // Pagination
     const indexOfLastDoctor = currentPage * doctorsPerPage;
     const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
-    const currentDoctors = filteredDoctors.slice(
-        indexOfFirstDoctor,
-        indexOfLastDoctor
-    );
+    const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
 
     if (isRoleLoading) {
         return (
@@ -227,10 +260,22 @@ export default function FeedbackPage() {
             }}
         >
             <Navbar />
+            {/* Notification Banner */}
+            {notification && (
+                <div
+                    className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
+                        notification.type === "success"
+                            ? "bg-green-600 text-white"
+                            : "bg-red-600 text-white"
+                    }`}
+                >
+                    {notification.message}
+                </div>
+            )}
             <main className="flex-grow p-6 md:p-8 lg:p-12">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Side: Doctor List + Search & Filter */}
-                    <div className="bg-[#1E1E1E] rounded-lg shadow-lg p-6">
+                    <section className="bg-[#1E1E1E] rounded-lg shadow-lg p-6 w-full lg:w-[650px] flex flex-col h-[1025px]">
                         <h2 className="text-2xl font-bold mb-6">Doctors</h2>
                         {/* Search */}
                         <div className="mb-4">
@@ -242,9 +287,7 @@ export default function FeedbackPage() {
                                 className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Search for a doctor..."
                                 value={searchQuery}
-                                onChange={(e) =>
-                                    handleSearchChange(e.target.value)
-                                }
+                                onChange={(e) => handleSearchChange(e.target.value)}
                             />
                         </div>
                         {/* Rating Filter */}
@@ -256,9 +299,7 @@ export default function FeedbackPage() {
                                 className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={ratingFilter}
                                 onChange={(e) =>
-                                    handleRatingFilterChange(
-                                        Number(e.target.value)
-                                    )
+                                    handleRatingFilterChange(Number(e.target.value))
                                 }
                             >
                                 <option value={0}>All Ratings</option>
@@ -285,9 +326,7 @@ export default function FeedbackPage() {
                                         {doctor.specialty}
                                     </p>
                                     <div className="flex items-center mt-2">
-                                        <span className="text-yellow-500 text-lg">
-                                            ★
-                                        </span>
+                                        <span className="text-yellow-500 text-lg">★</span>
                                         <span className="ml-1 text-gray-300">
                                             {doctor.rating.toFixed(1)}
                                         </span>
@@ -299,11 +338,7 @@ export default function FeedbackPage() {
                         <div className="mt-8 flex justify-between items-center">
                             <button
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                                onClick={() =>
-                                    setCurrentPage((prev) =>
-                                        Math.max(prev - 1, 1)
-                                    )
-                                }
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
                             >
                                 Previous
@@ -313,58 +348,68 @@ export default function FeedbackPage() {
                             </span>
                             <button
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                                onClick={() =>
-                                    setCurrentPage((prev) =>
-                                        Math.min(prev + 1, totalPages)
-                                    )
-                                }
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
                             >
                                 Next
                             </button>
                         </div>
-                    </div>
+                    </section>
 
                     {/* Right Side: Doctor Feedback + Form */}
-                    <div className="bg-[#1E1E1E] rounded-lg shadow-lg p-6">
+                    <section className="bg-[#1E1E1E] rounded-lg shadow-lg p-6 w-full lg:w-[700px] flex flex-col h-[1025px]">
                         <h2 className="text-2xl font-bold mb-6">
                             Feedback for{" "}
-                            {doctors.find((doc) => doc.id === selectedDoctor)
-                                ?.name || "Doctor"}
+                            {doctors.find((doc) => doc.id === selectedDoctor)?.name || "Doctor"}
                         </h2>
                         {/* Feedback List */}
-                        <div className="mb-6">
+                        <div className="flex-grow overflow-y-auto mb-4">
                             {doctorFeedbacks.length > 0 ? (
                                 <ul className="space-y-4">
                                     {doctorFeedbacks.map((feedback) => (
                                         <li
                                             key={feedback.id}
-                                            className="p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition"
+                                            className="relative p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition"
                                         >
-                                            <p className="text-gray-300">
-                                                {feedback.feedback}
-                                            </p>
+                                            {/* Delete icon: only show if the feedback belongs to the logged-in user */}
+                                            {username && feedback.user === username && (
+                                                <button
+                                                    onClick={() => openDeleteModal(feedback)}
+                                                    className="absolute top-2 right-2"
+                                                    title="Delete Feedback"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-5 w-5 text-red-500 hover:text-red-400"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M6 2a1 1 0 00-1 1v1H3.5a.5.5 0 000 1H4v10a2 2 0 002 2h8a2 2 0 002-2V5h.5a.5.5 0 000-1H15V3a1 1 0 00-1-1H6zm2 5a.5.5 0 011 0v7a.5.5 0 01-1 0V7zm4 0a.5.5 0 011 0v7a.5.5 0 01-1 0V7z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                            <p className="text-gray-300">{feedback.feedback}</p>
                                             <div className="flex items-center justify-between mt-2">
                                                 <div className="flex items-center space-x-1">
-                                                    {[1, 2, 3, 4, 5].map(
-                                                        (star) => (
-                                                            <span
-                                                                key={star}
-                                                                className={`text-lg ${
-                                                                    feedback.rating >=
-                                                                    star
-                                                                        ? "text-yellow-500"
-                                                                        : "text-gray-600"
-                                                                }`}
-                                                            >
-                                                                ★
-                                                            </span>
-                                                        )
-                                                    )}
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <span
+                                                            key={star}
+                                                            className={`text-lg ${
+                                                                feedback.rating >= star
+                                                                    ? "text-yellow-500"
+                                                                    : "text-gray-600"
+                                                            }`}
+                                                        >
+                                                            ★
+                                                        </span>
+                                                    ))}
                                                 </div>
                                                 <span className="text-sm text-gray-400">
-                                                    {feedback.user} -{" "}
-                                                    {feedback.date}
+                                                    {feedback.user} - {feedback.date}
                                                 </span>
                                             </div>
                                         </li>
@@ -379,27 +424,19 @@ export default function FeedbackPage() {
 
                         {/* New Feedback Form (Members only) */}
                         {userRole === "MEMBER" && (
-                            <div className="bg-gray-800 rounded-lg p-4">
-                                <h3 className="text-lg font-semibold mb-4">
-                                    Leave Feedback
-                                </h3>
+                            <div className="p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition mt-auto">
+                                <h3 className="text-lg font-semibold mb-4">Leave Feedback</h3>
                                 <textarea
                                     className="w-full p-3 mb-4 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Write your feedback here..."
                                     value={newFeedback}
-                                    onChange={(e) =>
-                                        setNewFeedback(e.target.value)
-                                    }
+                                    onChange={(e) => setNewFeedback(e.target.value)}
                                 ></textarea>
-                                <label className="block text-gray-300 font-semibold mb-2">
-                                    Rating:
-                                </label>
+                                <label className="block text-gray-300 font-semibold mb-2">Rating:</label>
                                 <select
                                     className="w-full p-3 mb-4 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={newRating}
-                                    onChange={(e) =>
-                                        setNewRating(Number(e.target.value))
-                                    }
+                                    onChange={(e) => setNewRating(Number(e.target.value))}
                                 >
                                     <option value={0}>Select Rating</option>
                                     <option value={1}>1 - Poor</option>
@@ -416,10 +453,22 @@ export default function FeedbackPage() {
                                 </button>
                             </div>
                         )}
-                    </div>
+                    </section>
                 </div>
             </main>
             <Footer />
+            {/* Delete Modal */}
+            {isDeleteModalOpen && feedbackToDelete && (
+                <DeleteFeedbackModal
+                    isOpen={isDeleteModalOpen}
+                    feedbackUser={feedbackToDelete.user}
+                    closeDeleteModal={closeDeleteModal}
+                    handleDelete={() => {
+                        handleDeleteFeedback(feedbackToDelete.id);
+                        closeDeleteModal();
+                    }}
+                />
+            )}
         </div>
     );
 }

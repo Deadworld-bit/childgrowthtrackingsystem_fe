@@ -66,11 +66,22 @@ const createFeedback = async (feedbackData: {doctorId: number;parentId: number;d
     }
 };
 
+// Delete a feedback by ID
+const deleteFeedback = async (id: bigint): Promise<void> => {
+    try {
+        await api.put(`/feedback/delete/${id}`);
+    } catch (error) {
+        console.error(`Error deleting user with ID ${id}:`, error);
+        throw error;
+    }
+};
+
 const feedbackApi = {
     getFeedbacks,
     getDoctorRating,
     getFeedbackByDoctorId,
-    createFeedback
+    createFeedback,
+    deleteFeedback,
 };
 
 export default feedbackApi;

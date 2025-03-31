@@ -71,6 +71,7 @@ const getDoctorById = async (id: bigint): Promise<Doctor> => {
     }
 };
 
+//Create a new user
 const createUser = async (userData: {username: string; password: string; email: string; role: string;}): Promise<{ status: string; message: string; data: User | null }> => {
     try {
       const response = await api.post<{ status: string; message: string; data: User | null }>("/users",userData);
