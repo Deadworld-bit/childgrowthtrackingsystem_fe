@@ -93,6 +93,19 @@ const updateUser = async (id: bigint, userData: Partial<User>): Promise<User> =>
     }
 };
 
+// Update user membership
+const updateUserMembership = async (id: bigint, membership: string): Promise<{ status: string; message: string }> => {
+    try {
+        const response = await api.put<{ status: string; message: string }>(
+            `/users/membership/${id}?membership=${membership}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating membership for user with ID ${id}:`, error);
+        throw error;
+    }
+};
+
 // Delete a user
 const deleteUser = async (id: bigint): Promise<void> => {
     try {
@@ -110,6 +123,7 @@ const userApi = {
     getDoctorById,
     createUser,
     updateUser,
+    updateUserMembership,
     deleteUser,
 };
 

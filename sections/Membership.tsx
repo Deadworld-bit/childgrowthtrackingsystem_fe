@@ -12,23 +12,21 @@ const Membership = () => {
         <div className="flex justify-center">
           <Tag>Membership</Tag>
         </div>
-        <h2 className="text-6xl font-medium text-center mt-6">
+        <h2 className="text-5xl md:text-6xl font-medium text-center mt-6">
           How <span className="text-lime-400">MUCH</span> for the{" "}
           <span className="text-lime-400">Services</span>?
         </h2>
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="mt-12 flex flex-col md:flex-row justify-center gap-8">
           {MEMBERSHIP_PLANS.map((plan, index) => {
-            // Example: highlight the middle plan as "Most Popular"
             const isPopular = index === 1;
 
             return (
               <div
                 key={index}
-                className={`relative bg-neutral-900 border border-gray-700 p-8 rounded-3xl text-center shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 ${
-                  isPopular ? "z-10" : ""
+                className={`relative bg-neutral-900 border border-gray-700 p-8 rounded-3xl text-center shadow-lg hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 w-full max-w-md ${
+                  isPopular ? "ring-2 ring-lime-500" : ""
                 }`}
               >
-                {/* “Most Popular” badge (optional) */}
                 {isPopular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-lime-500 text-black text-sm font-semibold py-1 px-3 rounded-full shadow-md">
                     Most Popular
@@ -39,7 +37,7 @@ const Membership = () => {
                   {plan.price}
                   <span className="text-lg text-gray-500">/mo</span>
                 </h2>
-                <p className="text-white font-semibold mt-4 text-xl">
+                <p className="text-white font-semibold mt-4 text-2xl">
                   {plan.name}
                 </p>
                 <p className="text-gray-400 text-sm mt-2">
@@ -49,9 +47,7 @@ const Membership = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  className={`mt-6 px-6 py-3 bg-lime-500 text-black font-semibold rounded-lg hover:bg-lime-600 transition-colors duration-200 ${
-                    isPopular ? "ring-2 ring-lime-500" : ""
-                  }`}
+                  className="mt-6 px-6 py-3 bg-lime-500 text-black font-semibold rounded-lg hover:bg-lime-600 transition-colors duration-200"
                   size="sm"
                 >
                   Start Free Trial

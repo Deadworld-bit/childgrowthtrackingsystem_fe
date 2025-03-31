@@ -2,7 +2,10 @@
 export const FOOTER_LINKS = [
     {
         title: "My Profile Links",
-        links: ["www.linkedin.com/in/thanhducdev", "https://github.com/Deadworld-bit"],
+        links: [
+            "www.linkedin.com/in/thanhducdev",
+            "https://github.com/Deadworld-bit",
+        ],
     },
 ];
 
@@ -50,43 +53,27 @@ export const REVIEWS = [
 // MEMBERSHIP SECTION
 export const MEMBERSHIP_PLANS = [
     {
-        name: "Lite",
-        price: "$40",
-        description:
-            "Lorem ipsum dolor sit amet adipiscing elit Mauris egestas enim.",
-        features: [
-            "All UI Components",
-            "Use with Unlimited Projects",
-            "Commercial Use",
-            "Email Support",
-            "Lifetime Access",
-            "Free Lifetime Updates",
-        ],
-    },
-    {
-        name: "Basic",
+        name: "BASIC",
         price: "$399",
         description:
-            "Lorem ipsum dolor sit amet adipiscing elit Mauris egestas enim.",
+            "Ideal for small families, offering essential features to manage your child's health with ease and expert support.",
         features: [
-            "All UI Components",
-            "Use with Unlimited Projects",
-            "Commercial Use",
-            "Email Support",
+            "Manage 2 children",
+            "Have doctor checkup",
+            "Ask doctor for advice",
             "Lifetime Access",
             "Free Lifetime Updates",
         ],
     },
     {
-        name: "Plus",
+        name: "PREMIUM",
         price: "$589",
         description:
-            "Lorem ipsum dolor sit amet adipiscing elit Mauris egestas enim.",
+            "Perfect for larger families, with extended child management and premium healthcare support for complete peace of mind.",
         features: [
-            "All UI Components",
-            "Use with Unlimited Projects",
-            "Commercial Use",
-            "Email Support",
+            "Manage 5 children",
+            "Have doctor checkup",
+            "Ask doctor for advice",
             "Lifetime Access",
             "Free Lifetime Updates",
         ],
