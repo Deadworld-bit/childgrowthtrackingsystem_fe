@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import {
     FaEdit,
-    FaPlus,
     FaTrash,
     FaInfoCircle,
     FaUserMd,
 } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
-import CreateUserModal from "./modals/createModal";
 import EditModal from "./modals/editModal";
 import DeleteModal from "./modals/deleteModal";
 import ProfileModal from "./modals/profileModal";
@@ -23,16 +21,13 @@ const USERS_PER_PAGE = 9;
 
 export default function UserPage() {
     const [users, setUsers] = useState<User[]>([]);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [creatingUser, setCreatingUser] = useState<Partial<User>>({});
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [profileUser, setProfileUser] = useState<User | null>(null);
-    const [isSpecializationModalOpen, setIsSpecializationModalOpen] =
-        useState(false);
+    const [isSpecializationModalOpen, setIsSpecializationModalOpen] = useState(false);
     const [specialization, setSpecialization] = useState("");
     const [certificate, setCertificate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -43,14 +38,27 @@ export default function UserPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
 
-    // Fetch user's role from cookies
+    // Fetch user's role from API using userId from cookie
     useEffect(() => {
-        const user = Cookies.get("user");
-        if (user) {
-            const parsedUser = JSON.parse(user);
-            setUserRole(parsedUser.role);
-        }
-        setIsRoleLoading(false);
+        const fetchUserRole = async () => {
+            const userCookie = Cookies.get("user");
+            if (userCookie) {
+                try {
+                    const parsedUser = JSON.parse(userCookie);
+                    const userId = BigInt(parsedUser.id);
+                    const response = await userApi.getUserById(userId);
+                    if (response.status === "ok") {
+                        setUserRole(response.data.role);
+                    } else {
+                        console.error("Error fetching user role:", response.message);
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role from API:", err);
+                }
+            }
+            setIsRoleLoading(false);
+        };
+        fetchUserRole();
     }, []);
 
     // Fetch users when component mounts or userType changes
@@ -62,11 +70,18 @@ export default function UserPage() {
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            const data =
-                userType === "members"
-                    ? await userApi.getMembers()
-                    : await userApi.getDoctors();
-            setUsers(data);
+            let response;
+            if (userType === "members") {
+                response = await userApi.getMembers();
+            } else {
+                response = await userApi.getDoctors();
+            }
+            if (response.status === "ok") {
+                setUsers(response.data);
+            } else {
+                console.error("Error fetching users:", response.message);
+                setUsers([]);
+            }
         } catch (error) {
             console.error("Error fetching users:", error);
             setUsers([]);
@@ -78,9 +93,13 @@ export default function UserPage() {
     // Fetch user by ID
     const fetchUserById = async (id: bigint) => {
         try {
-            const user = await userApi.getUserById(id);
-            setProfileUser(user);
-            setIsProfileModalOpen(true);
+            const response = await userApi.getUserById(id);
+            if (response.status === "ok") {
+                setProfileUser(response.data);
+                setIsProfileModalOpen(true);
+            } else {
+                console.error("Error fetching user:", response.message);
+            }
         } catch (error) {
             console.error(`Error fetching user with ID ${id}:`, error);
         }
@@ -91,16 +110,11 @@ export default function UserPage() {
     const filteredUsers = users.filter(
         (user) =>
             (user.username &&
-                user.username
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase())) ||
+                user.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (user.email &&
                 user.email.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    const displayedUsers = filteredUsers.slice(
-        startIndex,
-        startIndex + USERS_PER_PAGE
-    );
+    const displayedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
     const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
     const nextPage = () => {
@@ -109,46 +123,6 @@ export default function UserPage() {
 
     const prevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
-    };
-
-    // Create User
-    const openCreateModal = () => {
-        setCreatingUser({});
-        setIsCreateModalOpen(true);
-    };
-
-    const closeCreateModal = () => {
-        setIsCreateModalOpen(false);
-        setCreatingUser({});
-    };
-
-    // Create User
-    const saveNewUser = async () => {
-        try {
-            const newUserData = {
-                ...creatingUser,
-            };
-            const response = await userApi.createUser(
-                newUserData as {
-                    username: string;
-                    email: string;
-                    password: string;
-                    role: string;
-                }
-            );
-
-            if (response.status === "success" && response.data) {
-                setUsers([...users, response.data]);
-                setSuccessMessage(response.message);
-            } else {
-                setSuccessMessage("Failed to create user");
-            }
-
-            closeCreateModal();
-            setTimeout(() => setSuccessMessage(null), 3000);
-        } catch (error) {
-            console.error("Error creating user:", error);
-        }
     };
 
     // Edit Modal
@@ -173,18 +147,19 @@ export default function UserPage() {
     const saveChanges = async () => {
         if (editingUser) {
             try {
-                const updatedUser = await userApi.updateUser(
-                    editingUser.id,
-                    editingUser
-                );
-                setUsers(
-                    users.map((user) =>
-                        user.id === updatedUser.id ? updatedUser : user
-                    )
-                );
-                setSuccessMessage("User updated successfully!");
-                closeEditModal();
-                setTimeout(() => setSuccessMessage(null), 3000);
+                const response = await userApi.updateUser(editingUser.id, editingUser);
+                if (response.status === "ok") {
+                    setUsers(
+                        users.map((user) =>
+                            user.id === response.data.id ? response.data : user
+                        )
+                    );
+                    setSuccessMessage("User updated successfully!");
+                    closeEditModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    console.error("Error updating user:", response.message);
+                }
             } catch (error) {
                 console.error("Error updating user:", error);
             }
@@ -205,11 +180,15 @@ export default function UserPage() {
     const handleDelete = async () => {
         if (deletingUser) {
             try {
-                await userApi.deleteUser(deletingUser.id);
-                setUsers(users.filter((u) => u.id !== deletingUser.id));
-                setSuccessMessage("User banned successfully!");
-                closeDeleteModal();
-                setTimeout(() => setSuccessMessage(null), 3000);
+                const response = await userApi.deleteUser(deletingUser.id);
+                if (response.status === "ok") {
+                    setUsers(users.filter((u) => u.id !== deletingUser.id));
+                    setSuccessMessage("User banned successfully!");
+                    closeDeleteModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    console.error("Error deleting user:", response.message);
+                }
             } catch (error) {
                 console.error("Error deleting user:", error);
             }
@@ -217,10 +196,7 @@ export default function UserPage() {
     };
 
     // Specialization Modal
-    const openSpecializationModal = (
-        specialization: string,
-        certificate: string
-    ) => {
+    const openSpecializationModal = (specialization: string, certificate: string) => {
         setSpecialization(specialization);
         setCertificate(certificate);
         setIsSpecializationModalOpen(true);
@@ -232,7 +208,6 @@ export default function UserPage() {
         setCertificate("");
     };
 
-    // If role not loaded yet
     if (isRoleLoading) {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center bg-gray-900 text-white">
@@ -241,7 +216,6 @@ export default function UserPage() {
         );
     }
 
-    // If not admin
     if (userRole !== "ADMIN") {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center bg-gray-900 text-white">
@@ -249,10 +223,7 @@ export default function UserPage() {
                 <p className="text-lg">
                     You&apos;re not allowed to use this function.
                 </p>
-                <Link
-                    href="./"
-                    className="mt-2 text-sm text-blue-400 hover:underline"
-                >
+                <Link href="./" className="mt-2 text-sm text-blue-400 hover:underline">
                     Return Home
                 </Link>
             </div>
@@ -287,13 +258,6 @@ export default function UserPage() {
                 <div className="mb-6 p-6 bg-[#1E1E1E] rounded-lg shadow-md">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <button
-                                onClick={openCreateModal}
-                                className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2"
-                            >
-                                <FaPlus />
-                                <span>Create New User</span>
-                            </button>
                             <select
                                 id="userType"
                                 value={userType}
@@ -343,21 +307,13 @@ export default function UserPage() {
                             <thead className="bg-gray-900">
                                 <tr>
                                     <th className="p-4 text-left w-[5%]">#</th>
+                                    <th className="p-4 text-left w-[20%]">Name</th>
                                     <th className="p-4 text-left w-[20%]">
-                                        Name
+                                        {userType === "members" ? "Membership" : "Child In Charge"}
                                     </th>
-                                    <th className="p-4 text-left w-[20%]">
-                                        Membership
-                                    </th>
-                                    <th className="p-4 text-left w-[15%]">
-                                        Create Date
-                                    </th>
-                                    <th className="p-4 text-left w-[25%]">
-                                        Email
-                                    </th>
-                                    <th className="p-4 text-left w-[15%]">
-                                        Actions
-                                    </th>
+                                    <th className="p-4 text-left w-[15%]">Create Date</th>
+                                    <th className="p-4 text-left w-[25%]">Email</th>
+                                    <th className="p-4 text-left w-[15%]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -366,49 +322,35 @@ export default function UserPage() {
                                         key={user.id.toString()}
                                         className="border-b border-gray-700 hover:bg-gray-700 transition-colors"
                                     >
-                                        <td className="p-4">
-                                            {startIndex + index + 1}
-                                        </td>
+                                        <td className="p-4">{startIndex + index + 1}</td>
                                         <td className="p-4">{user.username}</td>
                                         <td className="p-4">
-                                            {user.membership}
+                                            {userType === "members" ? user.membership : user.childCount}
                                         </td>
                                         <td className="p-4">
                                             {user.createdDate
-                                                ? new Date(
-                                                      user.createdDate
-                                                  ).toLocaleDateString()
+                                                ? new Date(user.createdDate).toLocaleDateString()
                                                 : "N/A"}
                                         </td>
                                         <td className="p-4">{user.email}</td>
                                         <td className="p-4">
-                                            {/* 
-                                                2-column layout for buttons using CSS grid.
-                                                This places 4 buttons in a 2x2 arrangement.
-                                            */}
                                             <div className="grid grid-cols-2 gap-2">
                                                 <button
-                                                    onClick={() =>
-                                                        openEditModal(user)
-                                                    }
+                                                    onClick={() => openEditModal(user)}
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaEdit />
                                                     Update
                                                 </button>
                                                 <button
-                                                    onClick={() =>
-                                                        openDeleteModal(user)
-                                                    }
+                                                    onClick={() => openDeleteModal(user)}
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaTrash />
                                                     Ban
                                                 </button>
                                                 <button
-                                                    onClick={() =>
-                                                        fetchUserById(user.id)
-                                                    }
+                                                    onClick={() => fetchUserById(user.id)}
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-gray-500 hover:bg-gray-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaInfoCircle />
@@ -417,10 +359,7 @@ export default function UserPage() {
                                                 {userType === "doctors" && (
                                                     <button
                                                         onClick={() =>
-                                                            openSpecializationModal(
-                                                                user.specialization,
-                                                                user.certificate
-                                                            )
+                                                            openSpecializationModal(user.specialization, user.certificate)
                                                         }
                                                         className="flex items-center justify-center gap-2 px-2 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition text-sm"
                                                     >
@@ -472,19 +411,6 @@ export default function UserPage() {
             </main>
 
             {/* Modals */}
-            <CreateUserModal
-                isOpen={isCreateModalOpen}
-                user={creatingUser}
-                handleChange={(e) =>
-                    setCreatingUser({
-                        ...creatingUser,
-                        [e.target.name]: e.target.value,
-                    })
-                }
-                closeModal={closeCreateModal}
-                createUser={saveNewUser}
-            />
-
             <EditModal
                 isOpen={isEditModalOpen}
                 user={editingUser!}

@@ -185,6 +185,13 @@ export default function Navbar() {
                   Report
                 </a>
                 <a
+                  href="/membership"
+                  className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
+                >
+                  <FaChartBar className="text-yellow-400" />
+                  Membership
+                </a>
+                <a
                   href="/user"
                   className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
                 >

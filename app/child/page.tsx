@@ -35,6 +35,7 @@ export default function ChildPage() {
     const [filter, setFilter] = useState("haveDoctor");
     const [isLoading, setIsLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [user, setUser] = useState<{ id: string; role: string; membership: string } | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
@@ -52,6 +53,11 @@ export default function ChildPage() {
                     const parsedUser = JSON.parse(user);
                     // Fetch user data from API to get the latest role info
                     const userData = await userApi.getUserById(parsedUser.id);
+                    setUser({
+                        id: userData.id.toString(),
+                        role: userData.role,
+                        membership: userData.membership || "BASIC", 
+                    });
                     setUserRole(userData.role);
                     setUserId(userData.id.toString());
                 } catch (error) {
@@ -126,9 +132,21 @@ export default function ChildPage() {
 
     // Create Child
     const openCreateModal = () => {
+        // Check if user is a MEMBER, not PREMIUM, and already has at least one child.
+        if (
+          userRole === "MEMBER" &&
+          user?.membership?.toUpperCase() !== "PREMIUM" &&
+          children.length >= 1
+        ) {
+          setSuccessMessage(
+            "You have reached the child limit. Please upgrade your membership to add more children."
+          );
+          setTimeout(() => setSuccessMessage(null), 3000);
+          return;
+        }
         setCreatingChild({});
         setIsCreateModalOpen(true);
-    };
+      };      
 
     const closeCreateModal = () => {
         setIsCreateModalOpen(false);
@@ -339,7 +357,7 @@ export default function ChildPage() {
                     {/* Admin Filter & Create Button */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            {userRole !== "DOCTOR" && (
+                            {userRole === "MEMBER" && (
                                 <button
                                     onClick={openCreateModal}
                                     className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2"
@@ -348,6 +366,7 @@ export default function ChildPage() {
                                     <span>Create New Child</span>
                                 </button>
                             )}
+
                             {userRole === "ADMIN" && (
                                 <select
                                     value={filter}

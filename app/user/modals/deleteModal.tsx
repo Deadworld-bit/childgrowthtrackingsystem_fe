@@ -30,7 +30,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, user, closeDeleteModa
             onClick={handleDelete}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
           >
-            Delete
+            Ban
           </button>
         </div>
       </div>

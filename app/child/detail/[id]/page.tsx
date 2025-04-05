@@ -18,6 +18,7 @@ import Footer from "@/sections/Footer";
 import DeleteMetricModal from "@/app/child/modals/deleteMetricModal";
 import { FaTrash } from "react-icons/fa";
 import postApi, { Post } from "@/app/api/post";
+import userApi, { User } from "@/app/api/user";
 import Cookies from "js-cookie";
 import { METRIC as standardMetrics } from "@/constants/data";
 
@@ -45,13 +46,32 @@ export default function ChildDetailPage() {
 
     // State for standard chart age selection
     const [selectedStandardAge, setSelectedStandardAge] = useState("0");
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
 
     useEffect(() => {
+        const fetchUserData = async () => {
+            const user = Cookies.get("user");
+            if (user) {
+                try {
+                    const parsedUser = JSON.parse(user);
+                    // Fetch user data from API to get the latest role info
+                    const userData = await userApi.getUserById(parsedUser.id);
+                    setUserRole(userData.role);
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                console.error("User cookie not found.");
+            }
+            setIsRoleLoading(false);
+        };
         if (id && typeof id === "string") {
             fetchChildDetails(id);
             fetchChildMetrics(id);
             fetchChildPosts(id);
         }
+        fetchUserData();
     }, [id]);
 
     const fetchChildDetails = async (childId: string) => {
@@ -237,45 +257,51 @@ export default function ChildDetailPage() {
                 </div>
 
                 {/* Add Metric Form */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
-                    <h2 className="text-xl font-semibold mb-4">
-                        Add New Entry
-                    </h2>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <input
-                            type="number"
-                            className="p-3 rounded bg-gray-700 focus:outline-none"
-                            placeholder="Height (cm)"
-                            value={newHeight}
-                            onChange={(e) => setNewHeight(e.target.value)}
-                        />
-                        <input
-                            type="number"
-                            className="p-3 rounded bg-gray-700 focus:outline-none"
-                            placeholder="Weight (kg)"
-                            value={newWeight}
-                            onChange={(e) => setNewWeight(e.target.value)}
-                        />
-                        <input
-                            type="date"
-                            className="p-3 rounded bg-gray-700 focus:outline-none"
-                            value={newRecordedDate}
-                            onChange={(e) => setNewRecordedDate(e.target.value)}
-                        />
-                        <button
-                            onClick={handleAddEntry}
-                            className="p-3 bg-blue-500 rounded hover:bg-blue-600 transition"
-                        >
-                            Add Entry
-                        </button>
+                {userRole !== "ADMIN" && userRole !== "DOCTOR" && (
+                    <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Add New Entry
+                        </h2>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <input
+                                type="number"
+                                className="p-3 rounded bg-gray-700 focus:outline-none"
+                                placeholder="Height (cm)"
+                                value={newHeight}
+                                onChange={(e) => setNewHeight(e.target.value)}
+                            />
+                            <input
+                                type="number"
+                                className="p-3 rounded bg-gray-700 focus:outline-none"
+                                placeholder="Weight (kg)"
+                                value={newWeight}
+                                onChange={(e) => setNewWeight(e.target.value)}
+                            />
+                            <input
+                                type="date"
+                                className="p-3 rounded bg-gray-700 focus:outline-none"
+                                value={newRecordedDate}
+                                onChange={(e) =>
+                                    setNewRecordedDate(e.target.value)
+                                }
+                            />
+                            <button
+                                onClick={handleAddEntry}
+                                className="p-3 bg-blue-500 rounded hover:bg-blue-600 transition"
+                            >
+                                Add Entry
+                            </button>
+                        </div>
+                        {successMessage && (
+                            <p className="mt-4 text-green-400">
+                                {successMessage}
+                            </p>
+                        )}
+                        {errorMessage && (
+                            <p className="mt-4 text-red-400">{errorMessage}</p>
+                        )}
                     </div>
-                    {successMessage && (
-                        <p className="mt-4 text-green-400">{successMessage}</p>
-                    )}
-                    {errorMessage && (
-                        <p className="mt-4 text-red-400">{errorMessage}</p>
-                    )}
-                </div>
+                )}
 
                 {/* Child Data Chart */}
                 <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md relative">
@@ -560,38 +586,40 @@ export default function ChildDetailPage() {
                             })}
                     </div>
                     {/* Create New Post */}
-                    <div className="mt-8 p-6 bg-gray-700 rounded-lg shadow-md">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Create a New Post
-                        </h3>
-                        <div className="flex flex-col gap-4">
-                            <input
-                                type="text"
-                                placeholder="Post Title"
-                                className="p-3 rounded bg-gray-600 text-white border border-gray-500 focus:outline-none"
-                                value={newPostTitle}
-                                onChange={(e) =>
-                                    setNewPostTitle(e.target.value)
-                                }
-                            />
-                            <textarea
-                                placeholder="What's on your mind?"
-                                className="p-3 rounded bg-gray-600 text-white border border-gray-500 resize-none focus:outline-none"
-                                value={newPostContent}
-                                onChange={(e) =>
-                                    setNewPostContent(e.target.value)
-                                }
-                            ></textarea>
+                    {userRole !== "ADMIN" && (
+                        <div className="mt-8 p-6 bg-gray-700 rounded-lg shadow-md">
+                            <h3 className="text-lg font-semibold mb-4">
+                                Create a New Post
+                            </h3>
+                            <div className="flex flex-col gap-4">
+                                <input
+                                    type="text"
+                                    placeholder="Post Title"
+                                    className="p-3 rounded bg-gray-600 text-white border border-gray-500 focus:outline-none"
+                                    value={newPostTitle}
+                                    onChange={(e) =>
+                                        setNewPostTitle(e.target.value)
+                                    }
+                                />
+                                <textarea
+                                    placeholder="What's on your mind?"
+                                    className="p-3 rounded bg-gray-600 text-white border border-gray-500 resize-none focus:outline-none"
+                                    value={newPostContent}
+                                    onChange={(e) =>
+                                        setNewPostContent(e.target.value)
+                                    }
+                                ></textarea>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                                <button
+                                    onClick={handleCreatePost}
+                                    className="px-6 py-2 bg-blue-500 rounded text-white hover:bg-blue-600 transition"
+                                >
+                                    Post
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex justify-end mt-4">
-                            <button
-                                onClick={handleCreatePost}
-                                className="px-6 py-2 bg-blue-500 rounded text-white hover:bg-blue-600 transition"
-                            >
-                                Post
-                            </button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </main>
             <Footer />

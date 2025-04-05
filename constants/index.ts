@@ -58,7 +58,7 @@ export const MEMBERSHIP_PLANS = [
         description:
             "Ideal for small families, offering essential features to manage your child's health with ease and expert support.",
         features: [
-            "Manage 2 children",
+            "Manage 1 children",
             "Have doctor checkup",
             "Ask doctor for advice",
             "Lifetime Access",
@@ -71,7 +71,7 @@ export const MEMBERSHIP_PLANS = [
         description:
             "Perfect for larger families, with extended child management and premium healthcare support for complete peace of mind.",
         features: [
-            "Manage 5 children",
+            "Manage unlimited children",
             "Have doctor checkup",
             "Ask doctor for advice",
             "Lifetime Access",
