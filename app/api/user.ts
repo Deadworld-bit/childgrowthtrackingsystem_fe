@@ -1,6 +1,5 @@
 import api from ".";
 
-// Define User type
 export interface User {
     id: bigint;
     username: string;
@@ -83,7 +82,7 @@ const getDoctorById = async (id: bigint): Promise<{ status: string; message: str
 
 // Create a new user
 const createUser = async (
-    userData: { username: string; password: string; email: string; role: string; }
+userData: { username: string; password: string; email: string; role: string; }
 ): Promise<{ status: string; message: string; data: User | null }> => {
     try {
         const response = await api.post<{ status: string; message: string; data: User | null }>("/users", userData);

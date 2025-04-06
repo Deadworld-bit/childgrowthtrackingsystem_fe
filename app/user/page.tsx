@@ -61,7 +61,6 @@ export default function UserPage() {
         fetchUserRole();
     }, []);
 
-    // Fetch users when component mounts or userType changes
     useEffect(() => {
         fetchUsers();
     }, [userType]);

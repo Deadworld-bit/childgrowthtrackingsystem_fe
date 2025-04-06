@@ -1,344 +1,537 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { FaEdit, FaTrash, FaCheckCircle } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
+import membershipPlanApi, { MembershipPlan } from "@/app/api/membership";
+import userApi from "@/app/api/user";
+import CreateMembershipPlanModal from "@/app/membership/modals/createModal";
+import EditMembershipPlanModal from "@/app/membership/modals/updateModal";
+import DisableModal from "@/app/membership/modals/disableModal";
+import ActivateModal from "@/app/membership/modals/activeModal";
+import Cookies from "js-cookie";
+import Link from "next/link";
 
-type Membership = {
-  id: bigint;
-  name: string;
-  description: string;
-  features: string[];
-  annual_price: number;
-  duration: number;
-  max_children: number;
-  status: "active" | "inactive";
-  created_date: Date;
-  update_date: Date;
-};
-
-let nextId = BigInt(1); // Simple counter for generating new IDs
+const MEMBERSHIPS_PER_PAGE = 9;
 
 export default function MembershipPage() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [memberships, setMemberships] = useState<Membership[]>([
-    {
-      id: nextId++,
-      name: "Gold Plan",
-      description: "Access to all premium features",
-      features: ["Unlimited access", "Priority support"],
-      annual_price: 120,
-      duration: 12,
-      max_children: 3,
-      status: "active",
-      created_date: new Date(),
-      update_date: new Date(),
-    },
-  ]);
+    const [plans, setPlans] = useState<MembershipPlan[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+    const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+    const [disablePlan, setDisablePlan] = useState<MembershipPlan | null>(null);
+    const [isActiveModalOpen, setIsActiveModalOpen] = useState(false);
+    const [activePlan, setActivePlan] = useState<MembershipPlan | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const initialForm = {
-    name: "",
-    description: "",
-    features: [] as string[],
-    annual_price: 0,
-    duration: 0,
-    max_children: 0,
-    status: "active" as "active" | "inactive",
-  };
+    // Fetch user's role from API using userId from cookie
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            const userCookie = Cookies.get("user");
+            if (userCookie) {
+                try {
+                    const parsedUser = JSON.parse(userCookie);
+                    const userId = BigInt(parsedUser.id);
+                    const response = await userApi.getUserById(userId);
+                    if (response.status === "ok") {
+                        setUserRole(response.data.role);
+                    } else {
+                        console.error(
+                            "Error fetching user role:",
+                            response.message
+                        );
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role from API:", err);
+                }
+            }
+            setIsRoleLoading(false);
+        };
+        fetchUserRole();
+    }, []);
 
-  const [form, setForm] = useState(initialForm);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState<bigint | null>(null);
-  const [selectedMembership, setSelectedMembership] = useState<Membership | null>(null);
+    useEffect(() => {
+        fetchPlans();
+    }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => !prev);
-  };
+    // Fetch plans from API
+    const fetchPlans = async () => {
+        setIsLoading(true);
+        try {
+            let response;
+            response = await membershipPlanApi.getMembershipPlans();
+            if (response.status === "ok") {
+                setPlans(response.data);
+            } else {
+                console.error("Error fetching plans:", response.message);
+                setPlans([]);
+            }
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            setPlans([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
+    // Pagination
+    const startIndex = (currentPage - 1) * MEMBERSHIPS_PER_PAGE;
+    const filteredPlans = plans.filter(
+        (plans) =>
+            plans.name &&
+            plans.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const displayedPlans = filteredPlans.slice(
+        startIndex,
+        startIndex + MEMBERSHIPS_PER_PAGE
+    );
+    const totalPages = Math.ceil(filteredPlans.length / MEMBERSHIPS_PER_PAGE);
 
-    if (name === "features") {
-      setForm({ ...form, features: value.split(",").map((f) => f.trim()) });
-    } else if (["annual_price", "duration", "max_children"].includes(name)) {
-      setForm({ ...form, [name]: Number(value) });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
-  };
+    const nextPage = () => {
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    const prevPage = () => {
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
+    };
 
-    if (isEditing && editId !== null) {
-      // Update membership
-      setMemberships((prev) =>
-        prev.map((m) =>
-          m.id === editId ? { ...m, ...form, update_date: new Date() } : m
-        )
-      );
-      setIsEditing(false);
-      setEditId(null);
-    } else {
-      // Add new membership
-      const newMembership: Membership = {
-        ...form,
-        id: nextId++,
-        created_date: new Date(),
-        update_date: new Date(),
-      };
-      setMemberships((prev) => [...prev, newMembership]);
-    }
+    //Create Modal
+    const openCreateModal = () => setIsCreateModalOpen(true);
+    const closeCreateModal = () => setIsCreateModalOpen(false);
 
-    setForm(initialForm);
-  };
+    const handleCreate = async (planData: {
+        name: string;
+        description: string;
+        features: string;
+        maxChildren: number;
+        annualPrice: number;
+        duration: number;
+    }) => {
+        try {
+            const response = await membershipPlanApi.createMembershipPlan(
+                planData as MembershipPlan
+            );
+            if (response.status === "ok") {
+                setPlans([response.data, ...plans]);
+                setSuccessMessage("Plan created successfully!");
+                closeCreateModal();
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                console.error("Error creating plan:", response.message);
+            }
+        } catch (error) {
+            console.error("Error creating plan:", error);
+        }
+    };
 
-  const handleEdit = (membership: Membership) => {
-    setIsEditing(true);
-    setEditId(membership.id);
-    setForm({
-      name: membership.name,
-      description: membership.description,
-      features: membership.features,
-      annual_price: membership.annual_price,
-      duration: membership.duration,
-      max_children: membership.max_children,
-      status: membership.status,
-    });
-  };
+    // Edit Modal
+    const openEditModal = (plan: MembershipPlan) => {
+        setEditingPlan(plan);
+        setIsEditModalOpen(true);
+    };
 
-  const handleDelete = (id: bigint) => {
-    setMemberships((prev) => prev.filter((m) => m.id !== id));
-    if (isEditing && editId === id) {
-      setIsEditing(false);
-      setEditId(null);
-      setForm(initialForm);
-    }
-  };
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingPlan(null);
+    };
 
-  const handleView = (membership: Membership) => {
-    setSelectedMembership(membership);
-  };
+    const handleChange = (
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
+    ) => {
+        if (!editingPlan) return;
+        const { name, value } = e.target;
+        setEditingPlan({ ...editingPlan, [name]: value });
+    };
 
-  return (
-    <div className={`${darkMode ? "dark" : ""}`}>
-      <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-200">
-        <Navbar />
-        <header className="bg-white dark:bg-gray-800 shadow py-4">
-          <div className="max-w-6xl mx-auto flex justify-between items-center px-6">
-            <h1 className="text-3xl font-bold">Membership Management</h1>
-          </div>
-        </header>
-        <main className="flex-1 max-w-6xl mx-auto p-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow mb-8">
-            <h2 className="text-xl font-semibold mb-4">
-              {isEditing ? "Edit Membership" : "Add Membership"}
-            </h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Membership Name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Annual Price</label>
-                <input
-                  type="number"
-                  name="annual_price"
-                  placeholder="Annual Price"
-                  value={form.annual_price}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">
-                  Duration (days)
-                </label>
-                <input
-                  type="number"
-                  name="duration"
-                  placeholder="Duration (months)"
-                  value={form.duration}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Max Children</label>
-                <input
-                  type="number"
-                  name="max_children"
-                  placeholder="Max Children"
-                  value={form.max_children}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Features</label>
-                <input
-                  type="text"
-                  name="features"
-                  placeholder="Features (comma separated)"
-                  value={form.features.join(", ")}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium">Status</label>
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium">Description</label>
-                <textarea
-                  name="description"
-                  placeholder="Description"
-                  value={form.description}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-700 dark:text-gray-200"
-                />
-              </div>
-              <div className="md:col-span-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                  {isEditing ? "Update Membership" : "Add Membership"}
-                </button>
-              </div>
-            </form>
-          </div>
+    const saveChanges = async () => {
+        if (editingPlan) {
+            try {
+                const response = await membershipPlanApi.updateMembershipPlan(
+                    editingPlan.id,
+                    editingPlan
+                );
+                if (response.status === "ok") {
+                    setPlans(
+                        plans.map((plan) =>
+                            plan.id === response.data.id ? response.data : plan
+                        )
+                    );
+                    setSuccessMessage("Plan updated successfully!");
+                    closeEditModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    console.error("Error updating plan:", response.message);
+                }
+            } catch (error) {
+                console.error("Error updating plan:", error);
+            }
+        }
+    };
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden">
-              <thead className="bg-gray-100 dark:bg-gray-700 text-left text-sm uppercase font-medium">
-                <tr>
-                  <th className="p-3">ID</th>
-                  <th className="p-3">Name</th>
-                  <th className="p-3">Price</th>
-                  <th className="p-3">Duration</th>
-                  <th className="p-3">Max Children</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Features</th>
-                  <th className="p-3">Created</th>
-                  <th className="p-3">Updated</th>
-                  <th className="p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {memberships.map((m) => (
-                  <tr key={m.id.toString()} className="border-t dark:border-gray-600">
-                    <td className="p-3">{m.id.toString()}</td>
-                    <td className="p-3">{m.name}</td>
-                    <td className="p-3">${m.annual_price}</td>
-                    <td className="p-3">{m.duration} mo</td>
-                    <td className="p-3">{m.max_children}</td>
-                    <td className="p-3 capitalize">{m.status}</td>
-                    <td className="p-3">{m.features.join(", ")}</td>
-                    <td className="p-3">
-                      {m.created_date.toLocaleDateString()}
-                    </td>
-                    <td className="p-3">
-                      {m.update_date.toLocaleDateString()}
-                    </td>
-                    <td className="p-3 space-x-2">
-                      <button
-                        onClick={() => handleView(m)}
-                        className="bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEdit(m)}
-                        className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(m.id)}
-                        className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </main>
+    // Active Modal
+    const openActiveModal = (plan: MembershipPlan) => {
+        setActivePlan(plan);
+        setIsActiveModalOpen(true);
+    };
 
-        {/* Membership View Modal */}
-        {selectedMembership && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 md:w-1/2 shadow-lg">
-              <h2 className="text-2xl font-bold mb-4">
-                {selectedMembership.name}
-              </h2>
-              <p className="mb-2">
-                <strong>Description:</strong> {selectedMembership.description}
-              </p>
-              <p className="mb-2">
-                <strong>Features:</strong> {selectedMembership.features.join(", ")}
-              </p>
-              <p className="mb-2">
-                <strong>Annual Price:</strong> ${selectedMembership.annual_price}
-              </p>
-              <p className="mb-2">
-                <strong>Duration:</strong> {selectedMembership.duration} days
-              </p>
-              <p className="mb-2">
-                <strong>Max Children:</strong> {selectedMembership.max_children}
-              </p>
-              <p className="mb-2">
-                <strong>Status:</strong> {selectedMembership.status}
-              </p>
-              <p className="mb-2">
-                <strong>Created:</strong>{" "}
-                {selectedMembership.created_date.toLocaleDateString()}
-              </p>
-              <p className="mb-2">
-                <strong>Updated:</strong>{" "}
-                {selectedMembership.update_date.toLocaleDateString()}
-              </p>
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => setSelectedMembership(null)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                >
-                  Close
-                </button>
-              </div>
+    const closeActiveModal = () => {
+        setIsActiveModalOpen(false);
+        setActivePlan(null);
+    };
+
+    const handleActive = async () => {
+        if (activePlan) {
+            try {
+                const response = await membershipPlanApi.activeMembershipPlan(
+                    activePlan.id
+                );
+                if (response.status === "ok") {
+                    setPlans(
+                        plans.map((plan) =>
+                            plan.id === activePlan.id
+                                ? { ...plan, status: true }
+                                : plan
+                        )
+                    );
+                    setSuccessMessage("Plan activated successfully!");
+                    closeActiveModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    console.error("Error activating plan:", response.message);
+                }
+            } catch (error) {
+                console.error("Error activating plan:", error);
+            }
+        }
+    };
+
+    // Disable Modal
+    const openDisableModal = (plan: MembershipPlan) => {
+        setDisablePlan(plan);
+        setIsDisableModalOpen(true);
+    };
+
+    const closeDisableModal = () => {
+        setIsDisableModalOpen(false);
+        setDisablePlan(null);
+    };
+
+    const handleDisable = async () => {
+        if (disablePlan) {
+            try {
+                const response = await membershipPlanApi.disableMembershipPlan(
+                    disablePlan.id
+                );
+                if (response.status === "ok") {
+                    setPlans(
+                        plans.map((plan) =>
+                            plan.id === disablePlan.id
+                                ? { ...plan, status: false }
+                                : plan
+                        )
+                    );
+                    setSuccessMessage("Plan disabled successfully!");
+                    closeDisableModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    console.error("Error disable plan:", response.message);
+                }
+            } catch (error) {
+                console.error("Error disable plan:", error);
+            }
+        }
+    };
+
+    if (isRoleLoading) {
+        return (
+            <div className="flex flex-col min-h-screen items-center justify-center bg-gray-900 text-white">
+                <h1 className="text-3xl font-bold mb-4">Loading...</h1>
             </div>
-          </div>
-        )}
+        );
+    }
 
-        <Footer />
-      </div>
-    </div>
-  );
+    if (userRole !== "ADMIN") {
+        return (
+            <div className="flex flex-col min-h-screen items-center justify-center bg-gray-900 text-white">
+                <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+                <p className="text-lg">
+                    You&apos;re not allowed to use this function.
+                </p>
+                <Link
+                    href="./"
+                    className="mt-2 text-sm text-blue-400 hover:underline"
+                >
+                    Return Home
+                </Link>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="flex flex-col min-h-screen text-white"
+            style={{
+                background: "linear-gradient(to bottom, #1e1e1e, #121212)",
+                backgroundImage: "url('/parttern02.jpg')",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundBlendMode: "overlay",
+            }}
+        >
+            <Navbar />
+            <main className="flex-grow px-4 md:px-8 lg:px-16 py-8">
+                {/* Page Header */}
+                <div className="mb-6">
+                    <h1 className="text-3xl md:text-4xl font-bold">
+                        Membership Management
+                    </h1>
+                    <p className="text-gray-300 mt-2">
+                        Manage your site&apos;s membership plans with ease.
+                    </p>
+                </div>
+
+                {/* Filter & Search */}
+                <div className="mb-6 p-6 bg-[#1E1E1E] rounded-lg shadow-md">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <button
+                            onClick={openCreateModal}
+                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition"
+                        >
+                            + Create Plan
+                        </button>
+                        <form autoComplete="off">
+                            <input
+                                type="text"
+                                name="hidden-field"
+                                style={{ display: "none" }}
+                                autoComplete="name"
+                            />
+                            <input
+                                type="text"
+                                name="user-search"
+                                autoComplete="off"
+                                placeholder="Search by name"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </form>
+                    </div>
+                </div>
+
+                {/* Success Message */}
+                {successMessage && (
+                    <div className="mb-6 p-4 bg-green-500 rounded-lg text-white">
+                        {successMessage}
+                    </div>
+                )}
+
+                {/* Table */}
+                <div className="overflow-x-auto bg-[#1E1E1E] rounded-lg shadow-md">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <p>Loading...</p>
+                        </div>
+                    ) : displayedPlans.length > 0 ? (
+                        <table className="w-full table-auto border-collapse">
+                            <thead className="bg-gray-900">
+                                <tr>
+                                    <th className="p-4 text-left w-[5%]">#</th>
+                                    <th className="p-4 text-left w-[10%]">
+                                        Name
+                                    </th>
+                                    <th className="p-4 text-left w-[15%]">
+                                        Description
+                                    </th>
+                                    <th className="p-4 text-left w-[15%]">
+                                        Features
+                                    </th>
+                                    <th className="p-4 text-left w-[10%]">
+                                        Create Date
+                                    </th>
+                                    <th className="p-4 text-left w-[10%]">
+                                        Max Children
+                                    </th>
+                                    <th className="p-4 text-left w-[10%]">
+                                        Annual Price
+                                    </th>
+                                    <th className="p-4 text-left w-[5%]">
+                                        Duration
+                                    </th>
+                                    <th className="p-4 text-left w-[5%]">
+                                        Status
+                                    </th>
+                                    <th className="p-4 text-left w-[15%]">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displayedPlans.map((plan, index) => (
+                                    <tr
+                                        key={plan.id.toString()}
+                                        className="border-b border-gray-700 hover:bg-gray-700 transition-colors"
+                                    >
+                                        <td className="p-4">
+                                            {startIndex + index + 1}
+                                        </td>
+                                        <td className="p-4">{plan.name}</td>
+                                        <td className="p-4">
+                                            {plan.description}
+                                        </td>
+                                        <td className="p-4">
+                                            <ul className="list-disc list-inside">
+                                                {plan.features
+                                                    .split(",")
+                                                    .map((feat, i) => (
+                                                        <li key={i}>
+                                                            {feat.trim()}
+                                                        </li>
+                                                    ))}
+                                            </ul>
+                                        </td>
+                                        <td className="p-4">
+                                            {plan.createdDate
+                                                ? new Date(
+                                                      plan.createdDate
+                                                  ).toLocaleDateString()
+                                                : "N/A"}
+                                        </td>
+                                        <td className="p-4">
+                                            {plan.maxChildren}
+                                        </td>
+                                        <td className="p-4">
+                                            {plan.annualPrice} VND
+                                        </td>
+                                        <td className="p-4">{plan.duration} days</td>
+                                        <td className="p-4">
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                    plan.status
+                                                        ? "bg-green-600 text-white"
+                                                        : "bg-red-600 text-white"
+                                                }`}
+                                            >
+                                                {plan.status
+                                                    ? "Active"
+                                                    : "Inactive"}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() =>
+                                                        openEditModal(plan)
+                                                    }
+                                                    className="flex items-center justify-center gap-2 px-2 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition text-sm"
+                                                >
+                                                    <FaEdit />
+                                                    Update
+                                                </button>
+                                                {plan.status ? (
+                                                    <button
+                                                        onClick={() =>
+                                                            openDisableModal(
+                                                                plan
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 px-2 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition text-sm"
+                                                    >
+                                                        <FaTrash />
+                                                        Disable
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() =>
+                                                            openActiveModal(
+                                                                plan
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 px-2 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition text-sm"
+                                                    >
+                                                        <FaCheckCircle />
+                                                        Activate
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-lg">No users found.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center items-center mt-6 gap-6">
+                    <button
+                        onClick={prevPage}
+                        disabled={currentPage === 1}
+                        className={`px-4 py-2 rounded-lg text-white transition ${
+                            currentPage === 1
+                                ? "bg-gray-700 cursor-not-allowed"
+                                : "bg-blue-500 hover:bg-blue-600"
+                        }`}
+                    >
+                        Previous
+                    </button>
+                    <span className="text-lg font-semibold">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        onClick={nextPage}
+                        disabled={currentPage === totalPages}
+                        className={`px-4 py-2 rounded-lg text-white transition ${
+                            currentPage === totalPages
+                                ? "bg-gray-700 cursor-not-allowed"
+                                : "bg-blue-500 hover:bg-blue-600"
+                        }`}
+                    >
+                        Next
+                    </button>
+                </div>
+            </main>
+
+            {/* Modals */}
+            <CreateMembershipPlanModal
+                isOpen={isCreateModalOpen}
+                closeModal={closeCreateModal}
+                createPlan={handleCreate}
+            />
+            <EditMembershipPlanModal
+                isOpen={isEditModalOpen}
+                plan={editingPlan!}
+                handleChange={handleChange}
+                closeEditModal={closeEditModal}
+                saveChanges={saveChanges}
+            />
+            <DisableModal
+                isOpen={isDisableModalOpen}
+                membershipPlan={disablePlan}
+                closeDisableModal={closeDisableModal}
+                handleDisable={handleDisable}
+            />
+            <ActivateModal
+                isOpen={isActiveModalOpen}
+                membershipPlan={activePlan}
+                closeActiveModal={closeActiveModal}
+                handleActivate={handleActive}
+            />
+            <Footer />
+        </div>
+    );
 }
