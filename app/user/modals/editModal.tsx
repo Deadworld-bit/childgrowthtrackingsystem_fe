@@ -108,7 +108,6 @@ const EditModal: React.FC<EditModalProps> = ({
           >
             <option value="DOCTOR">DOCTOR</option>
             <option value="MEMBER">MEMBER</option>
-            <option value="ADMIN">ADMIN</option>
           </select>
         </div>
 

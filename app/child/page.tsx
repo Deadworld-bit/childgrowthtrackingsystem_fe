@@ -35,7 +35,7 @@ export default function ChildPage() {
     const [filter, setFilter] = useState("haveDoctor");
     const [isLoading, setIsLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [user, setUser] = useState<{ id: string; role: string; membership: string } | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
@@ -47,32 +47,30 @@ export default function ChildPage() {
     // Fetch user's role and ID from cookies
     useEffect(() => {
         const fetchUserData = async () => {
-            const user = Cookies.get("user");
-            if (user) {
+            const userCookie = Cookies.get("user");
+            if (userCookie) {
                 try {
-                    const parsedUser = JSON.parse(user);
-                    // Fetch user data from API to get the latest role info
-                    const userData = await userApi.getUserById(parsedUser.id);
-                    setUser({
-                        id: userData.id.toString(),
-                        role: userData.role,
-                        membership: userData.membership || "BASIC", 
-                    });
-                    setUserRole(userData.role);
-                    setUserId(userData.id.toString());
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    const parsedUser = JSON.parse(userCookie);
+                    const userId = BigInt(parsedUser.id);
+                    setUserId(parsedUser.id);
+                    const response = await userApi.getUserById(userId);
+                    if (response.status === "ok") {
+                        setUserRole(response.data.role);
+                    } else {
+                        console.error(
+                            "Error fetching user role:",
+                            response.message
+                        );
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role from API:", err);
                 }
-            } else {
-                console.error("User cookie not found.");
             }
             setIsRoleLoading(false);
         };
-
         fetchUserData();
     }, []);
 
-    // Fetch children whenever filter, userRole, or userId changes
     useEffect(() => {
         fetchChildren();
     }, [filter, userRole, userId]);
@@ -82,14 +80,39 @@ export default function ChildPage() {
         try {
             let data: Child[] = [];
             if (userRole === "ADMIN") {
-                data =
+                const response =
                     filter === "haveDoctor"
                         ? await childApi.getChildHaveDoctor()
                         : await childApi.getChildDontHaveDoctor();
+                if (response.status === "ok") {
+                    data = response.data;
+                } else {
+                    setErrorMessage(response.message);
+                    setTimeout(() => setErrorMessage(null), 3000);
+                    console.error("Error fetching children:", response.message);
+                }
             } else if (userRole === "MEMBER" && userId) {
-                data = await childApi.getChildByParentId(BigInt(userId));
+                const response = await childApi.getChildByParentId(
+                    BigInt(userId)
+                );
+                if (response.status === "ok") {
+                    data = response.data;
+                } else {
+                    setErrorMessage(response.message);
+                    setTimeout(() => setErrorMessage(null), 3000);
+                    console.error("Error fetching child:", response.message);
+                }
             } else if (userRole === "DOCTOR" && userId) {
-                data = await childApi.getChildByDoctorId(BigInt(userId));
+                const response = await childApi.getChildByDoctorId(
+                    BigInt(userId)
+                );
+                if (response.status === "ok") {
+                    data = response.data;
+                } else {
+                    setErrorMessage(response.message);
+                    setTimeout(() => setErrorMessage(null), 3000);
+                    console.error("Error fetching child:", response.message);
+                }
             }
             setChildren(data);
         } catch (error) {
@@ -102,8 +125,14 @@ export default function ChildPage() {
 
     const fetchDoctors = async () => {
         try {
-            const data = await userApi.getDoctors();
-            setDoctors(data);
+            const response = await userApi.getDoctors();
+            if (response.status === "ok") {
+                setDoctors(response.data);
+            } else {
+                setErrorMessage(response.message);
+                setTimeout(() => setErrorMessage(null), 3000);
+                console.error("Error fetching docs:", response.message);
+            }
         } catch (error) {
             console.error("Error fetching doctors:", error);
         }
@@ -132,21 +161,9 @@ export default function ChildPage() {
 
     // Create Child
     const openCreateModal = () => {
-        // Check if user is a MEMBER, not PREMIUM, and already has at least one child.
-        if (
-          userRole === "MEMBER" &&
-          user?.membership?.toUpperCase() !== "PREMIUM" &&
-          children.length >= 1
-        ) {
-          setSuccessMessage(
-            "You have reached the child limit. Please upgrade your membership to add more children."
-          );
-          setTimeout(() => setSuccessMessage(null), 3000);
-          return;
-        }
         setCreatingChild({});
         setIsCreateModalOpen(true);
-      };      
+    };
 
     const closeCreateModal = () => {
         setIsCreateModalOpen(false);
@@ -165,7 +182,7 @@ export default function ChildPage() {
                 dob: creatingChild.dob ? creatingChild.dob.toString() : "",
                 parentId: parseInt(userId),
             };
-            const newChild = await childApi.createChild(
+            const response = await childApi.createChild(
                 newChildData as {
                     name: string;
                     dob: string;
@@ -173,10 +190,17 @@ export default function ChildPage() {
                     parentId: number;
                 }
             );
-            setChildren([...children, newChild]);
-            setSuccessMessage("Child created successfully!");
-            closeCreateModal();
-            setTimeout(() => setSuccessMessage(null), 3000);
+            if (response.status === "ok" && response.data) {
+                setChildren([...children, response.data]);
+                setSuccessMessage("Child created successfully!");
+                closeCreateModal();
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                setErrorMessage(response.message);
+                closeCreateModal();
+                setTimeout(() => setErrorMessage(null), 3000);
+                console.error("Error creating child:", response.message);
+            }
         } catch (error) {
             console.error("Error creating child:", error);
         }
@@ -213,19 +237,27 @@ export default function ChildPage() {
                     gender: editingChild.gender,
                 };
 
-                const updatedChild = await childApi.updateChild(
+                const response = await childApi.updateChild(
                     editingChild.id,
                     updatedChildData
                 );
-
-                setChildren(
-                    children.map((child) =>
-                        child.id === updatedChild.id ? updatedChild : child
-                    )
-                );
-                setSuccessMessage("Child updated successfully!");
-                closeEditModal();
-                setTimeout(() => setSuccessMessage(null), 3000);
+                if (response.status === "ok") {
+                    setChildren(
+                        children.map((child) =>
+                            child.id === response.data.id
+                                ? response.data
+                                : child
+                        )
+                    );
+                    setSuccessMessage("Child updated successfully!");
+                    closeEditModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    setErrorMessage(response.message);
+                    closeEditModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
+                    console.error("Error updating child:", response.message);
+                }
             } catch (error) {
                 console.error("Error updating child:", error);
             }
@@ -246,11 +278,20 @@ export default function ChildPage() {
     const handleDelete = async () => {
         if (deletingChild) {
             try {
-                await childApi.deleteChild(deletingChild.id);
-                setChildren(children.filter((c) => c.id !== deletingChild.id));
-                setSuccessMessage("Child deleted successfully!");
-                closeDeleteModal();
-                setTimeout(() => setSuccessMessage(null), 3000);
+                const response = await childApi.deleteChild(deletingChild.id);
+                if (response.status === "ok") {
+                    setChildren(
+                        children.filter((c) => c.id !== deletingChild.id)
+                    );
+                    setSuccessMessage("Child deleted successfully!");
+                    closeDeleteModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                } else {
+                    setErrorMessage(response.message);
+                    closeDeleteModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
+                    console.error("Error deleting child:", response.message);
+                }
             } catch (error) {
                 console.error("Error deleting child:", error);
             }
@@ -278,20 +319,27 @@ export default function ChildPage() {
         }
 
         try {
-            await childApi.setDoctor(selectedChild.id, doctorId); // API returns null, so no need to store response
-
-            // Since API doesn't return updated child data, update manually if necessary
-            setChildren(
-                children.map((child) =>
-                    child.id === selectedChild.id
-                        ? { ...child, doctorId }
-                        : child
-                )
+            const response = await childApi.setDoctor(
+                selectedChild.id,
+                doctorId
             );
-
-            setSuccessMessage("Doctor set successfully!");
-            closeSetDoctorModal();
-            setTimeout(() => setSuccessMessage(null), 3000);
+            if (response.status === "ok") {
+                setChildren(
+                    children.map((child) =>
+                        child.id === selectedChild.id
+                            ? { ...child, doctorId }
+                            : child
+                    )
+                );
+                setSuccessMessage("Doctor set successfully!");
+                closeSetDoctorModal();
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                setErrorMessage(response.message);
+                closeSetDoctorModal();
+                setTimeout(() => setErrorMessage(null), 3000);
+                console.error("Error updating plan:", response.message);
+            }
         } catch (error) {
             console.error("Error setting doctor:", error);
             setSuccessMessage("Failed to set doctor.");
@@ -400,6 +448,12 @@ export default function ChildPage() {
                 {successMessage && (
                     <div className="mb-6 p-4 bg-green-500 text-white rounded-lg">
                         {successMessage}
+                    </div>
+                )}
+                {/* Error Message */}
+                {successMessage && (
+                    <div className="mb-6 p-4 bg-green-500 text-white rounded-lg">
+                        {errorMessage}
                     </div>
                 )}
 
@@ -583,7 +637,7 @@ export default function ChildPage() {
                 )}
             </main>
 
-            {/* Create Modal */}
+            {/*Modal */}
             <CreateModal
                 isOpen={isCreateModalOpen}
                 child={creatingChild}
@@ -596,25 +650,19 @@ export default function ChildPage() {
                 closeCreateModal={closeCreateModal}
                 saveChanges={saveNewChild}
             />
-
-            {/* Edit Modal */}
             <EditModal
                 isOpen={isEditModalOpen}
-                child={editingChild}
+                child={editingChild || {}}
                 handleChange={handleChange}
                 closeEditModal={closeEditModal}
                 saveChanges={saveChanges}
             />
-
-            {/* Delete Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 child={deletingChild}
                 closeDeleteModal={closeDeleteModal}
                 handleDelete={handleDelete}
             />
-
-            {/* Set Doctor Modal */}
             <SetDoctorModal
                 isOpen={isSetDoctorModalOpen}
                 doctors={doctors}

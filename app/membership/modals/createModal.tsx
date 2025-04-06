@@ -33,6 +33,7 @@ export default function CreateMembershipPlanModal({
     const [localFeatures, setLocalFeatures] = useState<string[]>([]);
     const [featureInput, setFeatureInput] = useState("");
     const [errors, setErrors] = useState<{
+        name?: string;
         maxChildren?: string;
         annualPrice?: string;
         duration?: string;
@@ -48,7 +49,7 @@ export default function CreateMembershipPlanModal({
             ...prev,
             [name]: name === "name" ? value.toUpperCase() : Number(value),
         }));
-        setErrors((e) => ({ ...e, [name]: undefined }));
+        setErrors((errs) => ({ ...errs, [name]: undefined }));
     };
 
     const onFeatureKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -65,6 +66,9 @@ export default function CreateMembershipPlanModal({
 
     const handleSubmit = () => {
         const errs: typeof errors = {};
+        if (!form.name || !form.name.trim()) {
+            errs.name = "Name is required.";
+        }
         if (form.maxChildren < 0) errs.maxChildren = "Must be 0 or greater.";
         else if (!Number.isInteger(form.maxChildren))
             errs.maxChildren = "Must be a whole number.";
@@ -122,6 +126,11 @@ export default function CreateMembershipPlanModal({
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
                     />
+                    {errors.name && (
+                        <p className="text-red-400 text-sm mt-1">
+                            {errors.name}
+                        </p>
+                    )}
                 </div>
 
                 {/* Description */}

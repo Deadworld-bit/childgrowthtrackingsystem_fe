@@ -1,3 +1,4 @@
+// app/components/Navbar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,14 +6,10 @@ import Link from "next/link";
 import Image from "next/image";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
-import {
-  FaChild,
-  FaCommentAlt,
-  FaChartBar,
-  FaUser,
-} from "react-icons/fa";
+import { FaChild, FaCommentAlt, FaChartBar, FaUser, FaIdBadge } from "react-icons/fa";
 import logoImage from "@/assets/images/logo.svg";
 import Button from "@/components/Button";
+import userApi, { User } from "@/app/api/user";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -25,19 +22,35 @@ export default function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<Partial<User> | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const user = Cookies.get("user");
-    if (user) {
-      const parsedUser = JSON.parse(user);
-      setUserData(parsedUser);
-      setUserRole(parsedUser.role);
-      setIsLoggedIn(true);
-    } else {
-      setIsLoggedIn(false);
-    }
+    const loadUser = async () => {
+      const cookie = Cookies.get("user");
+      if (!cookie) {
+        setIsLoggedIn(false);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(cookie);
+        const userId = BigInt(parsed.id);
+        const resp = await userApi.getUserById(userId);
+        if (resp.status === "ok") {
+          setUserData(resp.data);
+          setUserRole(resp.data.role);
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+        setIsLoggedIn(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
   const handleLogout = () => {
@@ -52,7 +65,6 @@ export default function Navbar() {
       <section className="py-4 lg:py-8 fixed w-full top-0 z-50">
         <div className="container">
           <div className="grid grid-cols-2 lg:grid-cols-3 border border-white/15 rounded-full p-2 px-4 md:pr-2 items-center bg-neutral-950/70 backdrop-blur">
-            {/* Logo with Link to Home */}
             <div>
               <Link href="/">
                 <Image
@@ -62,7 +74,6 @@ export default function Navbar() {
                 />
               </Link>
             </div>
-
             <div className="lg:flex justify-center items-center hidden">
               <nav className="flex gap-6 font-medium">
                 {navLinks.map((link) => (
@@ -73,7 +84,6 @@ export default function Navbar() {
               </nav>
             </div>
             <div className="flex justify-end gap-3">
-              {/* Menu Icon in Navbar */}
               <button
                 onClick={() => setIsSidebarOpen(true)}
                 className="md:hidden p-2 bg-white/10 rounded-lg"
@@ -90,14 +100,14 @@ export default function Navbar() {
                   strokeLinejoin="round"
                   className="feather feather-menu text-white"
                 >
-                  <line x1="3" y1="12" x2="21" y2="12"></line>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
               </button>
+
               {isLoggedIn === null ? (
-                // Placeholder while determining login state
-                <div className="hidden md:inline-flex items-center w-20 h-8 bg-gray-700 rounded animate-pulse"></div>
+                <div className="hidden md:inline-flex items-center w-20 h-8 bg-gray-700 rounded animate-pulse" />
               ) : isLoggedIn ? (
                 <Button
                   variant="secondary"
@@ -109,18 +119,12 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/SignIn">
-                    <Button
-                      variant="secondary"
-                      className="hidden md:inline-flex items-center"
-                    >
+                    <Button variant="secondary" className="hidden md:inline-flex">
                       Log In
                     </Button>
                   </Link>
-                  <Link href="/SIgnUp">
-                    <Button
-                      variant="primary"
-                      className="hidden md:inline-flex items-center"
-                    >
+                  <Link href="/SignUp">
+                    <Button variant="primary" className="hidden md:inline-flex">
                       Sign Up
                     </Button>
                   </Link>
@@ -130,7 +134,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Top-Left Corner Menu Button */}
+        {/* Sidebar toggle */}
         <button
           onClick={() => setIsSidebarOpen(true)}
           className="fixed top-4 left-4 p-3 bg-lime-400 text-white rounded-lg shadow-lg hover:bg-yellow-700 transition z-50"
@@ -144,7 +148,6 @@ export default function Navbar() {
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } transition-transform duration-300 ease-in-out z-50`}
         >
-          {/* Close Button */}
           <button
             onClick={() => setIsSidebarOpen(false)}
             className="absolute top-4 right-4 p-3 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
@@ -152,7 +155,7 @@ export default function Navbar() {
             ✕
           </button>
 
-          {/* Profile Section (always shown) */}
+          {/* profile */}
           <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-700 pr-16">
             <Link href={isLoggedIn ? "/profile" : "/SignIn"}>
               <div className="flex items-center gap-3 cursor-pointer truncate">
@@ -163,80 +166,80 @@ export default function Navbar() {
                 />
                 <div className="overflow-hidden">
                   <p className="font-semibold text-lg text-white truncate">
-                    {isLoggedIn && userData ? userData.username : "Guest"}
+                    {isLoggedIn && userData?.username
+                      ? userData.username
+                      : "Guest"}
                   </p>
                   <p className="text-sm text-gray-300 truncate">
-                    {isLoggedIn && userData ? userData.email : "Sign In"}
+                    {isLoggedIn && userData?.email ? userData.email : "Sign In"}
                   </p>
                 </div>
               </div>
             </Link>
           </div>
 
-          {/* Sidebar Content */}
+          {/* links */}
           <nav className="flex flex-col mt-6 space-y-6 text-white px-6">
             {userRole === "ADMIN" && (
               <>
-                <a
+                <Link
                   href="/overview"
                   className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
                 >
                   <FaChartBar className="text-yellow-400" />
                   Report
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/membership"
                   className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
                 >
-                  <FaChartBar className="text-yellow-400" />
+                  <FaIdBadge className="text-yellow-400" />
                   Membership
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/user"
                   className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
                 >
                   <FaUser className="text-yellow-400" />
                   User
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/child"
                   className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
                 >
                   <FaChild className="text-yellow-400" />
                   Child
-                </a>
+                </Link>
               </>
             )}
             {(userRole === "ADMIN" || userRole === "MEMBER") && (
-              <a
+              <Link
                 href="/feedback"
                 className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
               >
                 <FaCommentAlt className="text-yellow-400" />
                 Feedback & Rating
-              </a>
+              </Link>
             )}
             {(userRole === "DOCTOR" || userRole === "MEMBER") && (
-              <a
+              <Link
                 href="/child"
                 className="flex items-center gap-3 py-2 text-lg font-semibold hover:text-yellow-400 transition"
               >
                 <FaChild className="text-yellow-400" />
                 Child
-              </a>
+              </Link>
             )}
           </nav>
         </div>
-
-        {/* Overlay */}
         {isSidebarOpen && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsSidebarOpen(false)}
-          ></div>
+          />
         )}
       </section>
-      <div className="pb-[86px] md:pb-[98px] lg:px-[130px]"></div>
+      <div className="pb-[86px] md:pb-[98px] lg:px-[130px]" />
     </>
   );
 }

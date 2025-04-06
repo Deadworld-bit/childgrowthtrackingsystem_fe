@@ -13,14 +13,16 @@ export interface Metric {
 }
 
 // Fetch metrics by child ID
-const getMetricsByChildId = async (childId: BigInt): Promise<Metric[]> => {
+const getMetricsByChildId = async (
+    childId: BigInt
+): Promise<{ status: string; message: string; data: Metric[] }> => {
     try {
         const response = await api.get<{
             status: string;
             message: string;
             data: Metric[];
         }>(`/metric/findByChildId/${childId}`);
-        return response.data.data;
+        return response.data;
     } catch (error) {
         console.error(
             `Error fetching metrics for child with ID ${childId}:`,
@@ -77,9 +79,12 @@ const parseMetricString = (metricString: string): Metric => {
 };
 
 // Delete a metric
-const deleteMetric = async (id: BigInt): Promise<void> => {
+const deleteMetric = async (
+    id: BigInt
+): Promise<{ status: string; message: string }> => {
     try {
-        await api.put(`/metric/delete/${id}`);
+        const response = await api.put(`/metric/delete/${id}`);
+        return response.data;
     } catch (error) {
         console.error(`Error deleting metric with ID ${id}:`, error);
         throw error;

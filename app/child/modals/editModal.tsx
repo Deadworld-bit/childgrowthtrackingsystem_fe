@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface EditModalProps {
     isOpen: boolean;
@@ -16,8 +16,9 @@ const EditModal: React.FC<EditModalProps> = ({
     saveChanges,
 }) => {
     const [error, setError] = useState("");
+    const [nameError, setNameError] = useState("");
 
-    const validateDate = (dob: string) => {
+    const validateDOB = (dob: string) => {
         const currentDate = new Date();
         const selectedDate = new Date(dob);
         const age = currentDate.getFullYear() - selectedDate.getFullYear();
@@ -37,8 +38,22 @@ const EditModal: React.FC<EditModalProps> = ({
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         handleChange(e);
-        validateDate(e.target.value);
+        validateDOB(e.target.value);
     };
+
+    const validateName = (name: string) => {
+        if (!name || name.trim() === "") {
+            setNameError("Name cannot be empty.");
+        } else {
+            setNameError("");
+        }
+    };
+
+    useEffect(() => {
+        if (child?.name) {
+            validateName(child.name);
+        }
+    }, [child?.name]);
 
     if (!isOpen) return null;
 
@@ -51,10 +66,14 @@ const EditModal: React.FC<EditModalProps> = ({
                     <input
                         type="text"
                         name="name"
-                        value={child.name}
-                        onChange={handleChange}
+                        value={child.name || ""}
+                        onChange={(e) => {
+                            handleChange(e);
+                            validateName(e.target.value); // Validate the name when it changes
+                        }}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    {nameError && <p className="text-red-500 text-sm mt-1">{nameError}</p>}
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm">DOB</label>
@@ -71,12 +90,12 @@ const EditModal: React.FC<EditModalProps> = ({
                     <label className="block text-sm">Gender</label>
                     <select
                         name="gender"
-                        value={child.gender}
+                        value={child.gender || "MALE"}
                         onChange={handleChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
                     </select>
                 </div>
                 <div className="flex justify-end gap-4">
@@ -88,8 +107,8 @@ const EditModal: React.FC<EditModalProps> = ({
                     </button>
                     <button
                         onClick={saveChanges}
-                        disabled={!!error}
-                        className={`px-4 py-2 rounded-lg text-white ${error ? "bg-gray-500 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
+                        disabled={!!error || !!nameError}
+                        className={`px-4 py-2 rounded-lg text-white ${error || nameError ? "bg-gray-500 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
                     >
                         Save
                     </button>

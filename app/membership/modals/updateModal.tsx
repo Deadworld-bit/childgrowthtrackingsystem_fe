@@ -26,6 +26,7 @@ export default function EditMembershipPlanModal({
   const [localFeatures, setLocalFeatures] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState("");
   const [errors, setErrors] = useState<{
+    name?: string;
     maxChildren?: string;
     annualPrice?: string;
     duration?: string;
@@ -66,16 +67,19 @@ export default function EditMembershipPlanModal({
 
   const handleSave = () => {
     const errs: typeof errors = {};
-    if (plan.maxChildren < 0)
-      errs.maxChildren = "Must be 0 or greater.";
+
+    // Name must not be empty
+    if (!plan.name.trim()) {
+      errs.name = "Name is required.";
+    }
+
+    if (plan.maxChildren < 0) errs.maxChildren = "Must be 0 or greater.";
     else if (!Number.isInteger(plan.maxChildren))
       errs.maxChildren = "Must be a whole number.";
 
-    if (plan.annualPrice < 0)
-      errs.annualPrice = "Must be 0 or greater.";
+    if (plan.annualPrice < 0) errs.annualPrice = "Must be 0 or greater.";
 
-    if (plan.duration < 0)
-      errs.duration = "Must be 0 or greater.";
+    if (plan.duration < 0) errs.duration = "Must be 0 or greater.";
     else if (!Number.isInteger(plan.duration))
       errs.duration = "Must be a whole number.";
 
@@ -108,9 +112,15 @@ export default function EditMembershipPlanModal({
             type="text"
             name="name"
             value={plan.name}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e);
+              setErrors((prev) => ({ ...prev, name: undefined }));
+            }}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
+          {errors.name && (
+            <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -163,7 +173,7 @@ export default function EditMembershipPlanModal({
             value={plan.maxChildren}
             onChange={(e) => {
               handleChange(e);
-              setErrors((e) => ({ ...e, maxChildren: undefined }));
+              setErrors((prev) => ({ ...prev, maxChildren: undefined }));
             }}
             min={0}
             step={1}
@@ -185,7 +195,7 @@ export default function EditMembershipPlanModal({
             value={plan.annualPrice}
             onChange={(e) => {
               handleChange(e);
-              setErrors((e) => ({ ...e, annualPrice: undefined }));
+              setErrors((prev) => ({ ...prev, annualPrice: undefined }));
             }}
             min={0}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
@@ -206,16 +216,14 @@ export default function EditMembershipPlanModal({
             value={plan.duration}
             onChange={(e) => {
               handleChange(e);
-              setErrors((e) => ({ ...e, duration: undefined }));
+              setErrors((prev) => ({ ...prev, duration: undefined }));
             }}
             min={0}
             step={1}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
           {errors.duration && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.duration}
-            </p>
+            <p className="text-red-400 text-sm mt-1">{errors.duration}</p>
           )}
         </div>
 

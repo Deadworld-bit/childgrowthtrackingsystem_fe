@@ -50,19 +50,24 @@ export default function ChildDetailPage() {
     const [isRoleLoading, setIsRoleLoading] = useState(true);
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            const user = Cookies.get("user");
-            if (user) {
+        const fetchUserRole = async () => {
+            const userCookie = Cookies.get("user");
+            if (userCookie) {
                 try {
-                    const parsedUser = JSON.parse(user);
-                    // Fetch user data from API to get the latest role info
-                    const userData = await userApi.getUserById(parsedUser.id);
-                    setUserRole(userData.role);
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    const parsedUser = JSON.parse(userCookie);
+                    const userId = BigInt(parsedUser.id);
+                    const response = await userApi.getUserById(userId);
+                    if (response.status === "ok") {
+                        setUserRole(response.data.role);
+                    } else {
+                        console.error(
+                            "Error fetching user role:",
+                            response.message
+                        );
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role from API:", err);
                 }
-            } else {
-                console.error("User cookie not found.");
             }
             setIsRoleLoading(false);
         };
@@ -71,13 +76,17 @@ export default function ChildDetailPage() {
             fetchChildMetrics(id);
             fetchChildPosts(id);
         }
-        fetchUserData();
+        fetchUserRole();
     }, [id]);
 
     const fetchChildDetails = async (childId: string) => {
         try {
-            const childData = await childApi.getChildById(BigInt(childId));
-            setChildDetail(childData);
+            const response = await childApi.getChildById(BigInt(childId));
+            if (response.status === "ok") {
+                setChildDetail(response.data);
+            } else {
+                console.error("Error fetching child detail:", response.message);
+            }
         } catch (error) {
             console.error("Error fetching child details:", error);
         }
@@ -85,23 +94,27 @@ export default function ChildDetailPage() {
 
     const fetchChildMetrics = async (childId: string) => {
         try {
-            const metrics = await metricApi.getMetricsByChildId(
+            const response = await metricApi.getMetricsByChildId(
                 BigInt(childId)
             );
-            const parsedMetrics = metrics.map((metric) => ({
-                ...metric,
-                recordedDate: new Date(metric.recordedDate),
-            }));
-            setEntries(parsedMetrics);
-            if (parsedMetrics.length > 0) {
-                const years = [
-                    ...new Set(
-                        parsedMetrics.map((entry) =>
-                            entry.recordedDate.getFullYear().toString()
-                        )
-                    ),
-                ];
-                setSelectedYear(years[0]);
+            if (response.status === "ok") {
+                const parsedMetrics = response.data.map((metric) => ({
+                    ...metric,
+                    recordedDate: new Date(metric.recordedDate),
+                }));
+                setEntries(parsedMetrics);
+                if (parsedMetrics.length > 0) {
+                    const years = [
+                        ...new Set(
+                            parsedMetrics.map((entry) =>
+                                entry.recordedDate.getFullYear().toString()
+                            )
+                        ),
+                    ];
+                    setSelectedYear(years[0]);
+                }
+            } else {
+                console.error("Error fetching child metric:", response.message);
             }
         } catch (error) {
             console.error("Error fetching child metrics:", error);
@@ -123,6 +136,7 @@ export default function ChildDetailPage() {
         }
     };
 
+    //Delete Metric
     const openDeleteModal = (metric: Metric) => {
         setDeletingMetric(metric);
         setIsDeleteModalOpen(true);
@@ -136,11 +150,19 @@ export default function ChildDetailPage() {
     const handleDelete = async () => {
         if (deletingMetric) {
             try {
-                await metricApi.deleteMetric(deletingMetric.id);
-                setEntries(
-                    entries.filter((entry) => entry.id !== deletingMetric.id)
+                const response = await metricApi.deleteMetric(
+                    deletingMetric.id
                 );
-                closeDeleteModal();
+                if (response.status === "ok") {
+                    setEntries(
+                        entries.filter(
+                            (entry) => entry.id !== deletingMetric.id
+                        )
+                    );
+                    closeDeleteModal();
+                } else {
+                    console.error("Error deleting user:", response.message);
+                }
             } catch (error) {
                 console.error("Error deleting metric:", error);
             }

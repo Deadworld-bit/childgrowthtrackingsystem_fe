@@ -13,10 +13,10 @@ export interface Feedback {
 }
 
 // Fetch all feedbacks
-const getFeedbacks = async (): Promise<Feedback[]> => {
+const getFeedbacks = async (): Promise<{ status: string; message: string; data: Feedback[] }> => {
     try {
         const response = await api.get<{ status: string; message: string; data: Feedback[] }>("/feedback");
-        return response.data.data; 
+        return response.data; 
     } catch (error) {
         console.error("Error fetching users:", error);
         throw error;
@@ -24,10 +24,10 @@ const getFeedbacks = async (): Promise<Feedback[]> => {
 };
 
 // Fetch average rating for a specific doctor by ID
-const getDoctorRating = async (doctorId: bigint): Promise<number> => {
+const getDoctorRating = async (doctorId: bigint): Promise<{ status: string; message: string; data: number }> => {
     try {
         const response = await api.get<{ status: string; message: string; data: number }>(`/feedback/doctor/rating/${doctorId}`);
-        return response.data.data; 
+        return response.data; 
     } catch (error) {
         console.error(`Error fetching rating for doctor ID ${doctorId}:`, error);
         throw error;
@@ -35,17 +35,18 @@ const getDoctorRating = async (doctorId: bigint): Promise<number> => {
 };
 
 // Fetch feedback for a specific doctor by ID
-const getFeedbackByDoctorId = async (doctorId: bigint): Promise<Feedback[]> => {
+const getFeedbackByDoctorId = async (doctorId: bigint): Promise<{ status: string; message: string; data: Feedback[] }> => {
     try {
         const response = await api.get<{ status: string; message: string; data: Feedback[] }>(`/feedback/doctor/${doctorId}`);
-        return response.data.data; 
+        return response.data; 
     } catch (error) {
         console.error(`Error fetching feedback for doctor ID ${doctorId}:`, error);
         throw error;
     }
 };
 
-const createFeedback = async (feedbackData: {doctorId: number;parentId: number;description: string;rating: number;}): Promise<Feedback> => {
+// Create a new feedback
+const createFeedback = async (feedbackData: {doctorId: number;parentId: number;description: string;rating: number;}): Promise<{ status: string; message: string; data: Feedback }> => {
     try {
         const response = await api.post<{
             status: string;
@@ -59,7 +60,7 @@ const createFeedback = async (feedbackData: {doctorId: number;parentId: number;d
             }
         );
 
-        return response.data.data; // Return the created feedback object
+        return response.data; 
     } catch (error) {
         console.error("Error creating feedback:", error);
         throw error;
@@ -67,9 +68,10 @@ const createFeedback = async (feedbackData: {doctorId: number;parentId: number;d
 };
 
 // Delete a feedback by ID
-const deleteFeedback = async (id: bigint): Promise<void> => {
+const deleteFeedback = async (id: bigint): Promise<{ status: string; message: string }> => {
     try {
-        await api.put(`/feedback/delete/${id}`);
+        const response = await api.put<{ status: string; message: string }>(`/feedback/delete/${id}`);
+        return response.data;
     } catch (error) {
         console.error(`Error deleting user with ID ${id}:`, error);
         throw error;
