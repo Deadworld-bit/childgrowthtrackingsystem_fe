@@ -28,6 +28,21 @@ const getMembershipPlans = async (): Promise<{status: string; message: string; d
     }
 };
 
+//Fetch all membership plans
+const getActiveMembershipPlans = async (): Promise<{status: string; message: string; data: MembershipPlan[]}> => {
+    try {
+        const response = await api.get<{
+            status: string;
+            message: string;
+            data: MembershipPlan[];
+        }>("/membershipplan/getAllActive");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching membership plans:", error);
+        throw error;
+    }
+};
+
 //Create a new membership plan
 const createMembershipPlan = async (membershipPlan: MembershipPlan): Promise<{ status: string; message: string; data: MembershipPlan }> => {
     try {
@@ -82,6 +97,7 @@ const activeMembershipPlan = async (id: bigint): Promise<{ status: string; messa
 
 const membershipPlanApi = {
     getMembershipPlans,
+    getActiveMembershipPlans,
     createMembershipPlan,
     updateMembershipPlan,
     disableMembershipPlan,

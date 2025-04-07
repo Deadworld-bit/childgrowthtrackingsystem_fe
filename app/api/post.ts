@@ -11,10 +11,10 @@ export interface Post {
 }
 
 // Fetch all posts by child ID
-const getAllPostByChildId = async (childId: bigint): Promise<Post[]> => {
+const getAllPostByChildId = async (childId: bigint): Promise<{ status: string; message: string; data:Post[]}> => {
     try {
         const response = await api.get<{status: string; message: string; data: Post[];}>(`/post/getAllPostByChildId/${childId}`);
-        return response.data.data; 
+        return response.data; 
     } catch (error) {
         console.error(`Error fetching posts for child with ID ${childId}:`, error);
         throw error;
@@ -22,10 +22,10 @@ const getAllPostByChildId = async (childId: bigint): Promise<Post[]> => {
 };
 
 // Create a post
-const createPost = async (childData: {userId: number; childId: number; title: string; description: string}): Promise<Post> => {
+const createPost = async (childData: {userId: number; childId: number; title: string; description: string}): Promise<{ status: string; message: string; data:Post}> => {
     try {
         const response = await api.post<{status: string; message: string; data: Post; }>("/post/createPost", childData);
-        return response.data.data; 
+        return response.data; 
     } catch (error) {
         console.error("Error creating post:", error);
         throw error;
@@ -33,9 +33,10 @@ const createPost = async (childData: {userId: number; childId: number; title: st
 };
 
 // Delete a post
-const deletePost = async (id: bigint): Promise<void> => {
+const deletePost = async (id: bigint): Promise<{ status: string; message: string}> => {
     try {
-        await api.put(`/post/deletePost/${id}`);
+        const response = await api.put<{ status: string; message: string }>(`/post/deletePost/${id}`);
+        return response.data;
     } catch (error) {
         console.error(`Error deleting post with ID ${id}:`, error);
         throw error;

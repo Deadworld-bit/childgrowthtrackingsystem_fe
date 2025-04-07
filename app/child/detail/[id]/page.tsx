@@ -123,14 +123,16 @@ export default function ChildDetailPage() {
 
     const fetchChildPosts = async (childId: string) => {
         try {
-            const postsData = await postApi.getAllPostByChildId(
-                BigInt(childId)
-            );
-            const parsedPosts = postsData.map((post) => ({
-                ...post,
-                createdDate: new Date(post.createdDate),
-            }));
-            setPosts(parsedPosts);
+            const response = await postApi.getAllPostByChildId(BigInt(childId));
+            if (response.status === "ok" || response.status === "success") {
+                const parsedPosts = response.data.map((post) => ({
+                    ...post,
+                    createdDate: new Date(post.createdDate),
+                }));
+                setPosts(parsedPosts);
+            } else {
+                console.error("Error fetching child metric:", response.message);
+            }
         } catch (error) {
             console.error("Error fetching posts for child:", error);
         }
@@ -161,7 +163,7 @@ export default function ChildDetailPage() {
                     );
                     closeDeleteModal();
                 } else {
-                    console.error("Error deleting user:", response.message);
+                    console.error("Error deleting metric:", response.message);
                 }
             } catch (error) {
                 console.error("Error deleting metric:", error);
@@ -169,6 +171,7 @@ export default function ChildDetailPage() {
         }
     };
 
+    // Delete Post
     const handleDeletePost = async (postId: bigint) => {
         try {
             await postApi.deletePost(postId);
@@ -178,6 +181,7 @@ export default function ChildDetailPage() {
         }
     };
 
+    //Add Metric
     const handleAddEntry = async () => {
         if (!newWeight || !newHeight || !newRecordedDate) {
             setErrorMessage("Please fill in all fields.");
@@ -228,6 +232,7 @@ export default function ChildDetailPage() {
         return "bg-red-500";
     };
 
+    // Create Post
     const handleCreatePost = async () => {
         if (!newPostTitle.trim() || !newPostContent.trim()) {
             alert("Please provide both a title and content for the post.");
@@ -247,21 +252,34 @@ export default function ChildDetailPage() {
                 title: newPostTitle,
                 description: newPostContent,
             };
-            const createdPost = await postApi.createPost(newPost);
-            createdPost.createdDate = new Date(createdPost.createdDate);
-            setPosts([createdPost, ...posts]);
-            setNewPostTitle("");
-            setNewPostContent("");
+            const response = await postApi.createPost(newPost);
+            if (response.status === "ok" || response.status === "success") {
+                response.data.createdDate = new Date(response.data.createdDate);
+                setPosts([response.data, ...posts]);
+                setNewPostTitle("");
+                setNewPostContent("");
+            } else {
+                console.error("Error create post:", response.message);
+            }
         } catch (error) {
             console.error("Error creating post:", error);
         }
     };
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div
+            className="flex flex-col min-h-screen text-white"
+            style={{
+                background: "linear-gradient(to bottom, #1e1e1e, #121212)",
+                backgroundImage: "url('/parttern02.jpg')",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundBlendMode: "overlay",
+            }}
+        >
             <Navbar />
-            <main className="flex-1 bg-gray-900 text-white p-6">
-                {/* Child Header */}
+            <main className="flex-1 text-white p-6">
                 <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
                     <h1 className="text-3xl font-bold">
                         {childDetail ? childDetail.name : "Loading..."}

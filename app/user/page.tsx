@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-    FaEdit,
-    FaTrash,
-    FaInfoCircle,
-    FaUserMd,
-} from "react-icons/fa";
+import { FaEdit, FaTrash, FaInfoCircle, FaUserMd } from "react-icons/fa";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import EditModal from "./modals/editModal";
@@ -27,7 +22,8 @@ export default function UserPage() {
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [profileUser, setProfileUser] = useState<User | null>(null);
-    const [isSpecializationModalOpen, setIsSpecializationModalOpen] = useState(false);
+    const [isSpecializationModalOpen, setIsSpecializationModalOpen] =
+        useState(false);
     const [specialization, setSpecialization] = useState("");
     const [certificate, setCertificate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -35,10 +31,11 @@ export default function UserPage() {
     const [userType, setUserType] = useState("members");
     const [isLoading, setIsLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
 
-    // Fetch user's role from API using userId from cookie
+    // Fetch user's data from cookies
     useEffect(() => {
         const fetchUserRole = async () => {
             const userCookie = Cookies.get("user");
@@ -47,10 +44,16 @@ export default function UserPage() {
                     const parsedUser = JSON.parse(userCookie);
                     const userId = BigInt(parsedUser.id);
                     const response = await userApi.getUserById(userId);
-                    if (response.status === "ok") {
+                    if (
+                        response.status === "ok" ||
+                        response.status === "success"
+                    ) {
                         setUserRole(response.data.role);
                     } else {
-                        console.error("Error fetching user role:", response.message);
+                        console.error(
+                            "Error fetching user role:",
+                            response.message
+                        );
                     }
                 } catch (err) {
                     console.error("Error fetching user role from API:", err);
@@ -75,9 +78,11 @@ export default function UserPage() {
             } else {
                 response = await userApi.getDoctors();
             }
-            if (response.status === "ok") {
+            if (response.status === "ok" || response.status === "success") {
                 setUsers(response.data);
             } else {
+                setErrorMessage("response.message");
+                setTimeout(() => setErrorMessage(null), 3000);
                 console.error("Error fetching users:", response.message);
                 setUsers([]);
             }
@@ -93,7 +98,7 @@ export default function UserPage() {
     const fetchUserById = async (id: bigint) => {
         try {
             const response = await userApi.getUserById(id);
-            if (response.status === "ok") {
+            if (response.status === "ok" || response.status === "success") {
                 setProfileUser(response.data);
                 setIsProfileModalOpen(true);
             } else {
@@ -109,11 +114,16 @@ export default function UserPage() {
     const filteredUsers = users.filter(
         (user) =>
             (user.username &&
-                user.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                user.username
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())) ||
             (user.email &&
                 user.email.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    const displayedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+    const displayedUsers = filteredUsers.slice(
+        startIndex,
+        startIndex + USERS_PER_PAGE
+    );
     const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
     const nextPage = () => {
@@ -146,8 +156,11 @@ export default function UserPage() {
     const saveChanges = async () => {
         if (editingUser) {
             try {
-                const response = await userApi.updateUser(editingUser.id, editingUser);
-                if (response.status === "ok") {
+                const response = await userApi.updateUser(
+                    editingUser.id,
+                    editingUser
+                );
+                if (response.status === "ok" || response.status === "success") {
                     setUsers(
                         users.map((user) =>
                             user.id === response.data.id ? response.data : user
@@ -157,6 +170,9 @@ export default function UserPage() {
                     closeEditModal();
                     setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
+                    setErrorMessage(response.message);
+                    closeEditModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
                     console.error("Error updating user:", response.message);
                 }
             } catch (error) {
@@ -184,18 +200,24 @@ export default function UserPage() {
                     setUsers(users.filter((u) => u.id !== deletingUser.id));
                     setSuccessMessage("User banned successfully!");
                     closeDeleteModal();
-                    setTimeout(() => setSuccessMessage(null), 3000);
+                    setTimeout(() => setErrorMessage(null), 3000);
                 } else {
-                    console.error("Error deleting user:", response.message);
+                    setErrorMessage(response.message);
+                    closeDeleteModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
+                    console.error("Error banning user:", response.message);
                 }
             } catch (error) {
-                console.error("Error deleting user:", error);
+                console.error("Error banning user:", error);
             }
         }
     };
 
     // Specialization Modal
-    const openSpecializationModal = (specialization: string, certificate: string) => {
+    const openSpecializationModal = (
+        specialization: string,
+        certificate: string
+    ) => {
         setSpecialization(specialization);
         setCertificate(certificate);
         setIsSpecializationModalOpen(true);
@@ -222,7 +244,10 @@ export default function UserPage() {
                 <p className="text-lg">
                     You&apos;re not allowed to use this function.
                 </p>
-                <Link href="./" className="mt-2 text-sm text-blue-400 hover:underline">
+                <Link
+                    href="./"
+                    className="mt-2 text-sm text-blue-400 hover:underline"
+                >
                     Return Home
                 </Link>
             </div>
@@ -295,6 +320,13 @@ export default function UserPage() {
                     </div>
                 )}
 
+                {/* Error Message */}
+                {errorMessage && (
+                    <div className="mb-6 p-4 bg-red-500 rounded-lg text-white">
+                        {errorMessage}
+                    </div>
+                )}
+
                 {/* Table */}
                 <div className="overflow-x-auto bg-[#1E1E1E] rounded-lg shadow-md">
                     {isLoading ? (
@@ -306,13 +338,23 @@ export default function UserPage() {
                             <thead className="bg-gray-900">
                                 <tr>
                                     <th className="p-4 text-left w-[5%]">#</th>
-                                    <th className="p-4 text-left w-[20%]">Name</th>
                                     <th className="p-4 text-left w-[20%]">
-                                        {userType === "members" ? "Membership" : "Child In Charge"}
+                                        Name
                                     </th>
-                                    <th className="p-4 text-left w-[15%]">Create Date</th>
-                                    <th className="p-4 text-left w-[25%]">Email</th>
-                                    <th className="p-4 text-left w-[15%]">Actions</th>
+                                    <th className="p-4 text-left w-[20%]">
+                                        {userType === "members"
+                                            ? "Membership"
+                                            : "Child In Charge"}
+                                    </th>
+                                    <th className="p-4 text-left w-[15%]">
+                                        Create Date
+                                    </th>
+                                    <th className="p-4 text-left w-[25%]">
+                                        Email
+                                    </th>
+                                    <th className="p-4 text-left w-[15%]">
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -321,35 +363,47 @@ export default function UserPage() {
                                         key={user.id.toString()}
                                         className="border-b border-gray-700 hover:bg-gray-700 transition-colors"
                                     >
-                                        <td className="p-4">{startIndex + index + 1}</td>
+                                        <td className="p-4">
+                                            {startIndex + index + 1}
+                                        </td>
                                         <td className="p-4">{user.username}</td>
                                         <td className="p-4">
-                                            {userType === "members" ? user.membership : user.childCount}
+                                            {userType === "members"
+                                                ? user.membership
+                                                : user.childCount}
                                         </td>
                                         <td className="p-4">
                                             {user.createdDate
-                                                ? new Date(user.createdDate).toLocaleDateString()
+                                                ? new Date(
+                                                      user.createdDate
+                                                  ).toLocaleDateString()
                                                 : "N/A"}
                                         </td>
                                         <td className="p-4">{user.email}</td>
                                         <td className="p-4">
                                             <div className="grid grid-cols-2 gap-2">
                                                 <button
-                                                    onClick={() => openEditModal(user)}
+                                                    onClick={() =>
+                                                        openEditModal(user)
+                                                    }
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaEdit />
                                                     Update
                                                 </button>
                                                 <button
-                                                    onClick={() => openDeleteModal(user)}
+                                                    onClick={() =>
+                                                        openDeleteModal(user)
+                                                    }
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaTrash />
                                                     Ban
                                                 </button>
                                                 <button
-                                                    onClick={() => fetchUserById(user.id)}
+                                                    onClick={() =>
+                                                        fetchUserById(user.id)
+                                                    }
                                                     className="flex items-center justify-center gap-2 px-2 py-2 bg-gray-500 hover:bg-gray-600 rounded-lg transition text-sm"
                                                 >
                                                     <FaInfoCircle />
@@ -358,7 +412,10 @@ export default function UserPage() {
                                                 {userType === "doctors" && (
                                                     <button
                                                         onClick={() =>
-                                                            openSpecializationModal(user.specialization, user.certificate)
+                                                            openSpecializationModal(
+                                                                user.specialization,
+                                                                user.certificate
+                                                            )
                                                         }
                                                         className="flex items-center justify-center gap-2 px-2 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition text-sm"
                                                     >

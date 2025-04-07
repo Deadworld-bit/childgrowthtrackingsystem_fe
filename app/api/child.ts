@@ -53,6 +53,17 @@ const getChildDontHaveDoctor = async (): Promise<{
     }
 };
 
+// Count children
+const countChildren = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/child/countAll");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting doctors:", error);
+        throw error;
+    }
+}
+
 // Fetch child by ID
 const getChildById = async (
     id: BigInt
@@ -184,6 +195,7 @@ const deleteChild = async (
 const childApi = {
     getChildHaveDoctor,
     getChildDontHaveDoctor,
+    countChildren,
     getChildById,
     getChildByParentId,
     getChildByDoctorId,

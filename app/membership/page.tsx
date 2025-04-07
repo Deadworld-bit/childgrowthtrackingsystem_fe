@@ -13,7 +13,7 @@ import ActivateModal from "@/app/membership/modals/activeModal";
 import Cookies from "js-cookie";
 import Link from "next/link";
 
-const MEMBERSHIPS_PER_PAGE = 9;
+const MEMBERSHIPS_PER_PAGE = 6;
 
 export default function MembershipPage() {
     const [plans, setPlans] = useState<MembershipPlan[]>([]);
@@ -21,6 +21,7 @@ export default function MembershipPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [isRoleLoading, setIsRoleLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,9 +41,11 @@ export default function MembershipPage() {
                     const parsedUser = JSON.parse(userCookie);
                     const userId = BigInt(parsedUser.id);
                     const response = await userApi.getUserById(userId);
-                    if (response.status === "ok") {
+                    if (response.status === "ok" || response.status === "success") {
                         setUserRole(response.data.role);
                     } else {
+                        setErrorMessage(response.message);
+                        setTimeout(() => setErrorMessage(null), 3000);
                         console.error(
                             "Error fetching user role:",
                             response.message
@@ -67,9 +70,11 @@ export default function MembershipPage() {
         try {
             let response;
             response = await membershipPlanApi.getMembershipPlans();
-            if (response.status === "ok") {
+            if (response.status === "ok" || response.status === "success") {
                 setPlans(response.data);
             } else {
+                setErrorMessage(response.message);
+                setTimeout(() => setErrorMessage(null), 3000);
                 console.error("Error fetching plans:", response.message);
                 setPlans([]);
             }
@@ -118,12 +123,15 @@ export default function MembershipPage() {
             const response = await membershipPlanApi.createMembershipPlan(
                 planData as MembershipPlan
             );
-            if (response.status === "ok") {
+            if (response.status === "ok" || response.status === "success") {
                 setPlans([response.data, ...plans]);
                 setSuccessMessage("Plan created successfully!");
                 closeCreateModal();
                 setTimeout(() => setSuccessMessage(null), 3000);
             } else {
+                setErrorMessage(response.message);
+                closeCreateModal();
+                setTimeout(() => setErrorMessage(null), 3000);
                 console.error("Error creating plan:", response.message);
             }
         } catch (error) {
@@ -159,7 +167,7 @@ export default function MembershipPage() {
                     editingPlan.id,
                     editingPlan
                 );
-                if (response.status === "ok") {
+                if (response.status === "ok" || response.status === "success") {
                     setPlans(
                         plans.map((plan) =>
                             plan.id === response.data.id ? response.data : plan
@@ -169,6 +177,9 @@ export default function MembershipPage() {
                     closeEditModal();
                     setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
+                    setErrorMessage(response.message);
+                    closeEditModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
                     console.error("Error updating plan:", response.message);
                 }
             } catch (error) {
@@ -194,7 +205,7 @@ export default function MembershipPage() {
                 const response = await membershipPlanApi.activeMembershipPlan(
                     activePlan.id
                 );
-                if (response.status === "ok") {
+                if (response.status === "ok" || response.status === "success") {
                     setPlans(
                         plans.map((plan) =>
                             plan.id === activePlan.id
@@ -206,6 +217,9 @@ export default function MembershipPage() {
                     closeActiveModal();
                     setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
+                    setErrorMessage(response.message);
+                    closeActiveModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
                     console.error("Error activating plan:", response.message);
                 }
             } catch (error) {
@@ -231,7 +245,7 @@ export default function MembershipPage() {
                 const response = await membershipPlanApi.disableMembershipPlan(
                     disablePlan.id
                 );
-                if (response.status === "ok") {
+                if (response.status === "ok" || response.status === "success") {
                     setPlans(
                         plans.map((plan) =>
                             plan.id === disablePlan.id
@@ -243,6 +257,9 @@ export default function MembershipPage() {
                     closeDisableModal();
                     setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
+                    setErrorMessage(response.message);
+                    closeDisableModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
                     console.error("Error disable plan:", response.message);
                 }
             } catch (error) {
@@ -291,7 +308,7 @@ export default function MembershipPage() {
             <Navbar />
             <main className="flex-grow px-4 md:px-8 lg:px-16 py-8">
                 {/* Page Header */}
-                <div className="mb-6">
+                <div className="mb-6 ">
                     <h1 className="text-3xl md:text-4xl font-bold">
                         Membership Management
                     </h1>
@@ -333,6 +350,13 @@ export default function MembershipPage() {
                 {successMessage && (
                     <div className="mb-6 p-4 bg-green-500 rounded-lg text-white">
                         {successMessage}
+                    </div>
+                )}
+
+                {/* Error Message */}
+                {errorMessage && (
+                    <div className="mb-6 p-4 bg-red-500 rounded-lg text-white">
+                        {errorMessage}
                     </div>
                 )}
 
@@ -413,7 +437,9 @@ export default function MembershipPage() {
                                         <td className="p-4">
                                             {plan.annualPrice} VND
                                         </td>
-                                        <td className="p-4">{plan.duration} days</td>
+                                        <td className="p-4">
+                                            {plan.duration} days
+                                        </td>
                                         <td className="p-4">
                                             <span
                                                 className={`px-3 py-1 rounded-full text-xs font-semibold ${

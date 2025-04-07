@@ -26,6 +26,17 @@ export interface DoctorData {
     certificate: string;
 }
 
+export interface Membership {
+    id: bigint;
+    username: string;
+    planname: string;
+    maxChildren: number;
+    duration: number;
+    startDate: Date;
+    endDate: Date;
+    status: boolean;
+}
+
 // Fetch all members
 const getMembers = async (): Promise<{ status: string; message: string; data: User[] }> => {
     try {
@@ -58,6 +69,61 @@ const getDoctors = async (): Promise<{ status: string; message: string; data: (U
     }
 };
 
+// Count doctors
+const countDoctors = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/users/countAllDoctor");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting doctors:", error);
+        throw error;
+    }
+}
+
+// Count members
+const countMembers = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/users/countAllMember");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting members:", error);
+        throw error;
+    }
+}
+
+// Count Basic members
+const countBasicMembers = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/users/countByMembershipBasic");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting members:", error);
+        throw error;
+    }
+}
+
+// Count Premium members
+const countPremiumMembers = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/users/countByMembershipPremium");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting members:", error);
+        throw error;
+    }
+}
+
+// Count VIP members
+const countVIPMembers = async (): Promise<{ status: string; message: string; data: number }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: number }>("/users/countByMembershipVIP");
+        return response.data;
+    } catch (error) {
+        console.error("Error counting members:", error);
+        throw error;
+    }
+}
+
 // Fetch user by ID
 const getUserById = async (id: bigint): Promise<{ status: string; message: string; data: User }> => {
     try {
@@ -76,6 +142,17 @@ const getDoctorById = async (id: bigint): Promise<{ status: string; message: str
         return response.data;
     } catch (error) {
         console.error(`Error fetching doctor with ID ${id}:`, error);
+        throw error;
+    }
+};
+
+// Fetch membership by userId
+const getMembershipByUserId = async (userId: bigint): Promise<{ status: string; message: string; data: Membership }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: Membership }>(`/membership/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching membership with userId ${userId}:`, error);
         throw error;
     }
 };
@@ -151,8 +228,14 @@ const deleteUser = async (id: bigint): Promise<{ status: string; message: string
 const userApi = {
     getMembers,
     getDoctors,
+    countDoctors,
+    countMembers,
+    countBasicMembers,
+    countPremiumMembers,
+    countVIPMembers,
     getUserById,
     getDoctorById,
+    getMembershipByUserId,
     createUser,
     updateUser,
     updateUserProfile,

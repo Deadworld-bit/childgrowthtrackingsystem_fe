@@ -284,7 +284,6 @@ export default function FeedbackPage() {
             }}
         >
             <Navbar />
-            {/* Notification Banner */}
             {notification && (
                 <div
                     className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
@@ -298,10 +297,8 @@ export default function FeedbackPage() {
             )}
             <main className="flex-grow p-6 md:p-8 lg:p-12">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Left Side: Doctor List + Search & Filter */}
                     <section className="bg-[#1E1E1E] rounded-lg shadow-lg p-6 w-full lg:w-[650px] flex flex-col h-[1025px]">
                         <h2 className="text-2xl font-bold mb-6">Doctors</h2>
-                        {/* Search */}
                         <div className="mb-4">
                             <label className="block text-gray-300 mb-2 font-semibold">
                                 Search by Name:
@@ -316,7 +313,6 @@ export default function FeedbackPage() {
                                 }
                             />
                         </div>
-                        {/* Rating Filter */}
                         <div className="mb-4">
                             <label className="block text-gray-300 mb-2 font-semibold">
                                 Filter by Rating:
@@ -335,7 +331,6 @@ export default function FeedbackPage() {
                                 <option value={4.5}>4.5 and above</option>
                             </select>
                         </div>
-                        {/* Doctor List */}
                         <ul className="space-y-4">
                             {currentDoctors.map((doctor) => (
                                 <li
@@ -364,7 +359,7 @@ export default function FeedbackPage() {
                                 </li>
                             ))}
                         </ul>
-                        {/* Pagination */}
+
                         <div className="mt-8 flex justify-between items-center">
                             <button
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
@@ -394,14 +389,14 @@ export default function FeedbackPage() {
                         </div>
                     </section>
 
-                    {/* Right Side: Doctor Feedback + Form */}
+
                     <section className="bg-[#1E1E1E] rounded-lg shadow-lg p-6 w-full lg:w-[700px] flex flex-col h-[1025px]">
                         <h2 className="text-2xl font-bold mb-6">
                             Feedback for{" "}
                             {doctors.find((doc) => doc.id === selectedDoctor)
                                 ?.name || "Doctor"}
                         </h2>
-                        {/* Feedback List */}
+
                         <div className="flex-grow overflow-y-auto mb-4">
                             {doctorFeedbacks.length > 0 ? (
                                 <ul className="space-y-4">
@@ -410,7 +405,6 @@ export default function FeedbackPage() {
                                             key={feedback.id}
                                             className="relative p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition"
                                         >
-                                            {/* Delete icon: only show if the feedback belongs to the logged-in user */}
                                             {username &&
                                                 feedback.user === username && (
                                                     <button
@@ -472,7 +466,6 @@ export default function FeedbackPage() {
                             )}
                         </div>
 
-                        {/* New Feedback Form (Members only) */}
                         {userRole === "MEMBER" && (
                             <div className="p-4 border border-gray-700 rounded-lg bg-gray-800 hover:shadow-md transition mt-auto">
                                 <h3 className="text-lg font-semibold mb-4">
@@ -515,7 +508,6 @@ export default function FeedbackPage() {
                 </div>
             </main>
             <Footer />
-            {/* Delete Modal */}
             {isDeleteModalOpen && feedbackToDelete && (
                 <DeleteFeedbackModal
                     isOpen={isDeleteModalOpen}
