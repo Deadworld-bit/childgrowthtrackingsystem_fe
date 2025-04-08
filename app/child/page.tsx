@@ -190,7 +190,7 @@ export default function ChildPage() {
                     parentId: number;
                 }
             );
-            if (response.status === "ok" && response.data) {
+            if (response.status === "ok" || response.status === "success") {
                 setChildren([...children, response.data]);
                 setSuccessMessage("Child created successfully!");
                 closeCreateModal();
@@ -199,7 +199,6 @@ export default function ChildPage() {
                 setErrorMessage(response.message);
                 closeCreateModal();
                 setTimeout(() => setErrorMessage(null), 3000);
-                console.error("Error creating child:", response.message);
             }
         } catch (error) {
             console.error("Error creating child:", error);
@@ -451,8 +450,8 @@ export default function ChildPage() {
                     </div>
                 )}
                 {/* Error Message */}
-                {successMessage && (
-                    <div className="mb-6 p-4 bg-green-500 text-white rounded-lg">
+                {errorMessage && (
+                    <div className="mb-6 p-4 bg-red-500 text-white rounded-lg">
                         {errorMessage}
                     </div>
                 )}

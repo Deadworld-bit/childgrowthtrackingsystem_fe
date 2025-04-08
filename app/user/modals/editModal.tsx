@@ -111,20 +111,6 @@ const EditModal: React.FC<EditModalProps> = ({
           </select>
         </div>
 
-        {/* Membership Field */}
-        <div className="mb-6">
-          <label className="block text-sm mb-1">Membership</label>
-          <select
-            name="membership"
-            value={user.membership}
-            onChange={handleInputChange}
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="BASIC">BASIC</option>
-            <option value="PREMIUM">PREMIUM</option>
-          </select>
-        </div>
-
         {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <button

@@ -14,8 +14,8 @@ import userApi, { User } from "@/app/api/user";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Features", href: "#features" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "FAQs", href: "#faqs" },
+  { label: "Reviews", href: "#integrations" },
+  { label: "Memberships", href: "#faqs" },
 ];
 
 export default function Navbar() {

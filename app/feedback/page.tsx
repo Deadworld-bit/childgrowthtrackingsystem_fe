@@ -173,7 +173,7 @@ export default function FeedbackPage() {
                 setNewRating(0);
                 showNotification("Feedback submitted!", "success");
             } else {
-                throw new Error(createResp.message);
+                showNotification("Failed to submit feedback: " +createResp.message, "error");
             }
         } catch (err) {
             console.error(err);

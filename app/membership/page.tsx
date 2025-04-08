@@ -132,7 +132,6 @@ export default function MembershipPage() {
                 setErrorMessage(response.message);
                 closeCreateModal();
                 setTimeout(() => setErrorMessage(null), 3000);
-                console.error("Error creating plan:", response.message);
             }
         } catch (error) {
             console.error("Error creating plan:", error);
@@ -180,7 +179,6 @@ export default function MembershipPage() {
                     setErrorMessage(response.message);
                     closeEditModal();
                     setTimeout(() => setErrorMessage(null), 3000);
-                    console.error("Error updating plan:", response.message);
                 }
             } catch (error) {
                 console.error("Error updating plan:", error);
@@ -220,7 +218,6 @@ export default function MembershipPage() {
                     setErrorMessage(response.message);
                     closeActiveModal();
                     setTimeout(() => setErrorMessage(null), 3000);
-                    console.error("Error activating plan:", response.message);
                 }
             } catch (error) {
                 console.error("Error activating plan:", error);
@@ -260,7 +257,6 @@ export default function MembershipPage() {
                     setErrorMessage(response.message);
                     closeDisableModal();
                     setTimeout(() => setErrorMessage(null), 3000);
-                    console.error("Error disable plan:", response.message);
                 }
             } catch (error) {
                 console.error("Error disable plan:", error);

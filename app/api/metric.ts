@@ -38,44 +38,18 @@ const createMetric = async (metricData: {
     weight: number;
     height: number;
     recordedDate: string;
-}): Promise<Metric> => {
+}): Promise<{ status: string; message: string; data: Metric }> => {
     try {
         const response = await api.post<{
             status: string;
             message: string;
-            data: string; // The data is a string representation of the Metric
+            data: Metric;
         }>("/metric/create", metricData);
-
-        // Parse the string response into a Metric object
-        const parsedMetric = parseMetricString(response.data.data);
-
-        return parsedMetric; // Return the parsed Metric object
+        return response.data;
     } catch (error) {
         console.error("Error creating metric:", error);
         throw error;
     }
-};
-
-// Helper function to parse the string response
-const parseMetricString = (metricString: string): Metric => {
-    const regex =
-        /Metric\{id=(\d+), weight=([\d.]+), height=([\d.]+), BMI=([\d.]+), recordedDate=([\d-:T.]+), createDate=([\d-:T.]+), status=(\w+)\}/;
-    const match = metricString.match(regex);
-
-    if (!match) {
-        throw new Error("Failed to parse metric string");
-    }
-
-    return {
-        id: BigInt(match[1]),
-        weight: parseFloat(match[2]),
-        height: parseFloat(match[3]),
-        bmi: parseFloat(match[4]),
-        recordedDate: new Date(match[5]),
-        createDate: new Date(match[6]),
-        status: match[7] === "true",
-        childId: BigInt(0), // Set a default value for childId if it's not included in the string
-    };
 };
 
 // Delete a metric

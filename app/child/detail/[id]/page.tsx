@@ -36,8 +36,10 @@ export default function ChildDetailPage() {
     const [newWeight, setNewWeight] = useState("");
     const [newHeight, setNewHeight] = useState("");
     const [newRecordedDate, setNewRecordedDate] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
-    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage1, setSuccessMessage1] = useState<string | null>(null);
+    const [errorMessage1, setErrorMessage1] = useState<string | null>(null);
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [newPostTitle, setNewPostTitle] = useState("");
@@ -114,7 +116,8 @@ export default function ChildDetailPage() {
                     setSelectedYear(years[0]);
                 }
             } else {
-                console.error("Error fetching child metric:", response.message);
+                setErrorMessage(response.message);
+                setTimeout(() => setErrorMessage(null), 3000);
             }
         } catch (error) {
             console.error("Error fetching child metrics:", error);
@@ -131,7 +134,8 @@ export default function ChildDetailPage() {
                 }));
                 setPosts(parsedPosts);
             } else {
-                console.error("Error fetching child metric:", response.message);
+                setErrorMessage1(response.message);
+                setTimeout(() => setErrorMessage1(null), 3000);
             }
         } catch (error) {
             console.error("Error fetching posts for child:", error);
@@ -155,15 +159,19 @@ export default function ChildDetailPage() {
                 const response = await metricApi.deleteMetric(
                     deletingMetric.id
                 );
-                if (response.status === "ok") {
+                if (response.status === "ok" || response.status === "success") {
                     setEntries(
                         entries.filter(
                             (entry) => entry.id !== deletingMetric.id
                         )
                     );
+                    setSuccessMessage("User updated successfully!");
                     closeDeleteModal();
+                    setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
-                    console.error("Error deleting metric:", response.message);
+                    setErrorMessage(response.message);
+                    closeDeleteModal();
+                    setTimeout(() => setErrorMessage(null), 3000);
                 }
             } catch (error) {
                 console.error("Error deleting metric:", error);
@@ -174,8 +182,15 @@ export default function ChildDetailPage() {
     // Delete Post
     const handleDeletePost = async (postId: bigint) => {
         try {
-            await postApi.deletePost(postId);
-            setPosts(posts.filter((post) => post.id !== postId));
+            const response = await postApi.deletePost(postId);
+            if (response.status === "ok" || response.status === "success") {
+                setPosts(posts.filter((post) => post.id !== postId));
+                setSuccessMessage1("User updated successfully!");
+                setTimeout(() => setSuccessMessage1(null), 3000);
+            } else {
+                setErrorMessage1(response.message);
+                setTimeout(() => setErrorMessage1(null), 3000);
+            }
         } catch (error) {
             console.error("Error deleting post:", error);
         }
@@ -187,29 +202,55 @@ export default function ChildDetailPage() {
             setErrorMessage("Please fill in all fields.");
             return;
         }
+    
         const recordedDate = new Date(newRecordedDate);
-        if (childDetail?.dob && recordedDate < new Date(childDetail.dob)) {
-            setErrorMessage(
-                "The recorded date cannot be earlier than the child's date of birth."
-            );
+        if (isNaN(recordedDate.getTime())) {
+            setErrorMessage("Invalid recorded date.");
             return;
         }
+    
+        if (childDetail?.dob) {
+            const dobDate = new Date(childDetail.dob);
+            if (isNaN(dobDate.getTime())) {
+                setErrorMessage("Invalid date of birth.");
+                return;
+            }
+            if (recordedDate < dobDate) {
+                setErrorMessage("The recorded date cannot be earlier than the child's date of birth.");
+                return;
+            }
+        }
+    
+        if (!id || isNaN(Number(id))) {
+            setErrorMessage("Invalid child ID.");
+            return;
+        }
+        const childId = Number(id);
+    
         try {
             const metricData = {
                 weight: parseFloat(newWeight),
                 height: parseFloat(newHeight),
-                recordedDate: recordedDate.toISOString(),
-                childId: typeof id === "string" ? Number(id) : 0,
+                recordedDate: recordedDate.toISOString(), 
+                childId: childId, 
             };
-            const createdMetric = await metricApi.createMetric(metricData);
-            createdMetric.recordedDate = new Date(createdMetric.recordedDate);
-            setEntries([...entries, createdMetric]);
-            setSuccessMessage("Metric added successfully!");
-            setErrorMessage("");
-            setNewWeight("");
-            setNewHeight("");
-            setNewRecordedDate("");
-            setTimeout(() => setSuccessMessage(""), 3000);
+    
+            const response = await metricApi.createMetric(metricData);
+            if (response.status === "ok" || response.status === "success") {
+                const newMetric = response.data; 
+                newMetric.recordedDate = new Date(newMetric.recordedDate); 
+                setEntries([...entries, newMetric]); 
+                setSuccessMessage("Metric added successfully!");
+                setErrorMessage("");
+                setNewWeight("");
+                setNewHeight("");
+                setNewRecordedDate("");
+                setTimeout(() => setSuccessMessage("Successfully to add metric!"), 3000);
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                setErrorMessage(response.message || "Failed to add metric.");
+                setTimeout(() => setErrorMessage(null), 3000);
+            }
         } catch (error) {
             console.error("Error creating metric:", error);
             setErrorMessage("An error occurred while adding the entry.");
@@ -258,8 +299,11 @@ export default function ChildDetailPage() {
                 setPosts([response.data, ...posts]);
                 setNewPostTitle("");
                 setNewPostContent("");
+                setSuccessMessage1("User updated successfully!");
+                setTimeout(() => setSuccessMessage1(null), 3000);
             } else {
-                console.error("Error create post:", response.message);
+                setErrorMessage1(response.message);
+                setTimeout(() => setErrorMessage1(null), 3000);
             }
         } catch (error) {
             console.error("Error creating post:", error);
@@ -552,6 +596,14 @@ export default function ChildDetailPage() {
                             Showing {posts.length} post
                             {posts.length !== 1 ? "s" : ""}
                         </p>
+                        {successMessage1 && (
+                            <p className="mt-4 text-green-400">
+                                {successMessage1}
+                            </p>
+                        )}
+                        {errorMessage1 && (
+                            <p className="mt-4 text-red-400">{errorMessage1}</p>
+                        )}
                         <select
                             className="p-2 bg-gray-700 rounded text-white border border-gray-600 focus:ring-2 focus:ring-blue-500"
                             value={selectedYearPost}

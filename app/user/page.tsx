@@ -81,9 +81,8 @@ export default function UserPage() {
             if (response.status === "ok" || response.status === "success") {
                 setUsers(response.data);
             } else {
-                setErrorMessage("response.message");
+                setErrorMessage(response.message);
                 setTimeout(() => setErrorMessage(null), 3000);
-                console.error("Error fetching users:", response.message);
                 setUsers([]);
             }
         } catch (error) {
@@ -102,7 +101,8 @@ export default function UserPage() {
                 setProfileUser(response.data);
                 setIsProfileModalOpen(true);
             } else {
-                console.error("Error fetching user:", response.message);
+                setErrorMessage(response.message);
+                setTimeout(() => setErrorMessage(null), 3000);
             }
         } catch (error) {
             console.error(`Error fetching user with ID ${id}:`, error);
@@ -173,7 +173,6 @@ export default function UserPage() {
                     setErrorMessage(response.message);
                     closeEditModal();
                     setTimeout(() => setErrorMessage(null), 3000);
-                    console.error("Error updating user:", response.message);
                 }
             } catch (error) {
                 console.error("Error updating user:", error);
@@ -200,12 +199,11 @@ export default function UserPage() {
                     setUsers(users.filter((u) => u.id !== deletingUser.id));
                     setSuccessMessage("User banned successfully!");
                     closeDeleteModal();
-                    setTimeout(() => setErrorMessage(null), 3000);
+                    setTimeout(() => setSuccessMessage(null), 3000);
                 } else {
                     setErrorMessage(response.message);
                     closeDeleteModal();
-                    setTimeout(() => setSuccessMessage(null), 3000);
-                    console.error("Error banning user:", response.message);
+                    setTimeout(() => setErrorMessage(null), 3000);
                 }
             } catch (error) {
                 console.error("Error banning user:", error);
