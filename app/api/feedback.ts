@@ -12,6 +12,13 @@ export interface Feedback {
     updatedDate: Date;
 }
 
+export interface ListDoctor {
+    doctorId: bigint;
+    doctorName: string;
+    childId: bigint;
+    childName: string;
+}
+
 // Fetch all feedbacks
 const getFeedbacks = async (): Promise<{ status: string; message: string; data: Feedback[] }> => {
     try {
@@ -19,6 +26,17 @@ const getFeedbacks = async (): Promise<{ status: string; message: string; data: 
         return response.data; 
     } catch (error) {
         console.error("Error fetching users:", error);
+        throw error;
+    }
+};
+
+// Fetch all Doctors by parent ID
+const getDoctorListByParentId = async (parentId: bigint): Promise<{ status: string; message: string; data: ListDoctor[] }> => {
+    try {
+        const response = await api.get<{ status: string; message: string; data: ListDoctor[] }>(`/feedback/${parentId}`);
+        return response.data; 
+    } catch (error) {
+        console.error(`Error fetching doctors for parent ID ${parentId}:`, error);
         throw error;
     }
 };
@@ -80,6 +98,7 @@ const deleteFeedback = async (id: bigint): Promise<{ status: string; message: st
 
 const feedbackApi = {
     getFeedbacks,
+    getDoctorListByParentId,
     getDoctorRating,
     getFeedbackByDoctorId,
     createFeedback,

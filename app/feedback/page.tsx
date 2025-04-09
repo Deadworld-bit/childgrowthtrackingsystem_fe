@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import userApi from "@/app/api/user";
-import feedbackApi from "@/app/api/feedback";
+import feedbackApi, { ListDoctor } from "@/app/api/feedback";
 import Cookies from "js-cookie";
 import Link from "next/link";
 import DeleteFeedbackModal from "@/app/feedback/modals/deleteModal";
@@ -50,7 +50,6 @@ export default function FeedbackPage() {
     const doctorsPerPage = 5;
     const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
-    // Function to display notification messages
     const showNotification = (message: string, type: "success" | "error") => {
         setNotification({ message, type });
         setTimeout(() => {
@@ -88,38 +87,68 @@ export default function FeedbackPage() {
     // Fetch doctors and their ratings
     const fetchDoctorsWithRatings = async () => {
         try {
+          let list: { id: number; name: string; specialty: string }[] = [];
+      
+          if (userRole === "ADMIN") {
             const resp = await userApi.getDoctors();
             if (resp.status !== "ok") {
-                console.error("Error fetching doctors:", resp.message);
-                return;
+              console.error("Error fetching doctors:", resp.message);
+              return;
             }
-
-            const withRatings: Doctor[] = await Promise.all(
-                resp.data.map(async (doc: any) => {
-                    const ratingResp = await feedbackApi.getDoctorRating(
-                        BigInt(doc.id)
-                    );
-                    const rating =
-                        ratingResp.status === "ok" ? ratingResp.data : 0;
-                    return {
-                        id: doc.id,
-                        name: doc.username || "Unknown",
-                        specialty: doc.specialization || "Unknown",
-                        rating,
-                    };
-                })
-            );
-
-            setDoctors(withRatings);
-            setFilteredDoctors(withRatings);
-            if (withRatings.length) {
-                setSelectedDoctor(withRatings[0].id);
-                fetchDoctorFeedbacks(withRatings[0].id);
+            list = resp.data.map((doc: any) => ({
+              id: doc.id != null ? Number(doc.id) : NaN,
+              name: doc.username ?? "",
+              specialty: doc.specialization ?? "Unknown",
+            }));
+          } else if (userRole === "MEMBER") {
+            if (!userId) return;
+            const resp = await feedbackApi.getDoctorListByParentId(BigInt(userId));
+            if (resp.status !== "ok") {
+              console.error("Error fetching parent’s doctors:", resp.message);
+              return;
             }
+            list = resp.data.map((d: ListDoctor) => ({
+              id: Number(d.doctorId),
+              name: d.doctorName ?? "",
+              specialty: "Unknown",
+            }));
+          } else {
+            return;
+          }
+      
+          // Filter out any entries where id or name is “empty”
+          list = list.filter(doc => !isNaN(doc.id) && doc.name.trim().length > 0);
+      
+          // Fetch ratings and coerce to number
+          const withRatings: Doctor[] = await Promise.all(
+            list.map(async (doc) => {
+              const ratingResp = await feedbackApi.getDoctorRating(BigInt(doc.id));
+              const ratingNum = ratingResp.status === "ok"
+                ? Number(ratingResp.data)
+                : 0;
+              return {
+                ...doc,
+                rating: ratingNum,
+              };
+            })
+          );
+      
+          // (Optional) Filter again, in case rating API gave you something weird
+          const validDoctors = withRatings.filter(d => typeof d.rating === "number");
+      
+          setDoctors(validDoctors);
+          setFilteredDoctors(validDoctors);
+      
+          if (validDoctors.length > 0) {
+            setSelectedDoctor(validDoctors[0].id);
+            fetchDoctorFeedbacks(validDoctors[0].id);
+          }
         } catch (err) {
-            console.error("Error loading doctors + ratings:", err);
+          console.error("Error loading doctors + ratings:", err);
         }
-    };
+      };
+      
+      
 
     // Fetch feedback for a specific doctor
     const fetchDoctorFeedbacks = async (doctorId: number) => {
@@ -173,7 +202,10 @@ export default function FeedbackPage() {
                 setNewRating(0);
                 showNotification("Feedback submitted!", "success");
             } else {
-                showNotification("Failed to submit feedback: " +createResp.message, "error");
+                showNotification(
+                    "Failed to submit feedback: " + createResp.message,
+                    "error"
+                );
             }
         } catch (err) {
             console.error(err);
@@ -210,8 +242,10 @@ export default function FeedbackPage() {
     };
 
     useEffect(() => {
-        fetchDoctorsWithRatings();
-    }, []);
+        if (!isRoleLoading && userRole) {
+            fetchDoctorsWithRatings();
+        }
+    }, [isRoleLoading, userRole]);
 
     // Handle doctor selection
     const handleDoctorClick = (doctorId: number) => {
@@ -388,7 +422,6 @@ export default function FeedbackPage() {
                             </button>
                         </div>
                     </section>
-
 
                     <section className="bg-[#1E1E1E] rounded-lg shadow-lg p-6 w-full lg:w-[700px] flex flex-col h-[1025px]">
                         <h2 className="text-2xl font-bold mb-6">
