@@ -55,9 +55,7 @@ function SignUpContent() {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only trim leading and trailing spaces, allowing spaces between words
-    const cleanedName = e.target.value.trim();
-    setName(cleanedName);
+    setName(e.target.value); // Allow all input, validate on submit
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +63,6 @@ function SignUpContent() {
     setError(null);
     setSuccess(null);
 
-    // Validate name
     const trimmedName = name.trim(); // Ensure no leading/trailing spaces in validation
     if (!trimmedName) {
       setError("Name is required.");
@@ -76,14 +73,18 @@ function SignUpContent() {
       return;
     }
 
-    // Validate email format
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>[\]]/;
+    if (specialCharRegex.test(trimmedName)) {
+      setError("Name cannot contain special characters like *, %, $, etc.");
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address.");
       return;
     }
 
-    // Validate password security
     if (!isPasswordSecure(password)) {
       setError(
         "Password must be at least 10 characters long and include uppercase, lowercase, numbers, and special characters."
@@ -91,7 +92,6 @@ function SignUpContent() {
       return;
     }
 
-    // Validate password match
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -107,8 +107,7 @@ function SignUpContent() {
 
       if (response.status === "false") {
         setError(
-          response.message ||
-            "Failed to create account. Please try again."
+          response.message || "Failed to create account. Please try again."
         );
         return;
       }
@@ -161,9 +160,7 @@ function SignUpContent() {
             <p className="text-red-500 text-center mb-4">{error}</p>
           )}
           {success && (
-            <p className="text-green-500 text-center mb-4">
-              {success}
-            </p>
+            <p className="text-green-500 text-center mb-4">{success}</p>
           )}
 
           <form onSubmit={handleSubmit}>
@@ -179,9 +176,9 @@ function SignUpContent() {
                   id="name"
                   type="text"
                   className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Your full name"
+                  placeholder="Your full name (no special characters)"
                   value={name}
-                  onChange={(e) => setName(e.target.value)} // Changed to direct setName
+                  onChange={handleNameChange}
                   required
                 />
               </div>
@@ -195,7 +192,7 @@ function SignUpContent() {
                 </label>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Your email"
                   value={email}
