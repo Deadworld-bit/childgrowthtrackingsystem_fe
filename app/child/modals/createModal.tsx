@@ -74,7 +74,7 @@ const EditModal: React.FC<EditModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
             <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-4">Update Child</h2>
+                <h2 className="text-2xl font-bold mb-4">Create Child</h2>
                 <div className="mb-4">
                     <label className="block text-sm">Name</label>
                     <input
