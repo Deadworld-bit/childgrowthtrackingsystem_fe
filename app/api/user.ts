@@ -181,6 +181,17 @@ const updateUser = async (id: bigint, userData: Partial<User>): Promise<{ status
     }
 };
 
+// Update a user membership
+const setMembership = async (userid: bigint, membershipPlanId: bigint): Promise<{ status: string; message: string; data: Membership }> => {
+    try {
+        const response = await api.put<{ status: string; message: string; data: Membership }>(`/membership/${userid}`, membershipPlanId);
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating user with ID ${userid}:`, error);
+        throw error;
+    }
+};
+
 // Update a user profile
 const updateUserProfile = async (id: bigint, userData: Partial<User>): Promise<{ status: string; message: string; data: User }> => {
     try {
@@ -237,6 +248,7 @@ const userApi = {
     getDoctorById,
     getMembershipByUserId,
     createUser,
+    setMembership,
     updateUser,
     updateUserProfile,
     updateSpec,

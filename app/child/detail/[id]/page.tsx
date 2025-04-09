@@ -16,7 +16,14 @@ import {
 import Navbar from "@/sections/Navbar";
 import Footer from "@/sections/Footer";
 import DeleteMetricModal from "@/app/child/modals/deleteMetricModal";
-import { FaTrash } from "react-icons/fa";
+import {
+    FaCalendarAlt,
+    FaChartLine,
+    FaHeartbeat,
+    FaRulerVertical,
+    FaTrash,
+    FaWeight,
+} from "react-icons/fa";
 import postApi, { Post } from "@/app/api/post";
 import userApi, { User } from "@/app/api/user";
 import Cookies from "js-cookie";
@@ -100,20 +107,33 @@ export default function ChildDetailPage() {
                 BigInt(childId)
             );
             if (response.status === "ok") {
-                const parsedMetrics = response.data.map((metric) => ({
-                    ...metric,
-                    recordedDate: new Date(metric.recordedDate),
-                }));
+                const parsedMetrics = response.data.map((metric) => {
+                    const parsedDate = new Date(metric.recordedDate);
+                    if (!isValidDate(parsedDate)) {
+                        console.error(
+                            "Invalid date from API:",
+                            metric.recordedDate
+                        );
+                    }
+                    return {
+                        ...metric,
+                        recordedDate: parsedDate,
+                    };
+                });
                 setEntries(parsedMetrics);
                 if (parsedMetrics.length > 0) {
                     const years = [
                         ...new Set(
-                            parsedMetrics.map((entry) =>
-                                entry.recordedDate.getFullYear().toString()
-                            )
+                            parsedMetrics
+                                .filter((entry) =>
+                                    isValidDate(entry.recordedDate)
+                                )
+                                .map((entry) =>
+                                    entry.recordedDate.getFullYear().toString()
+                                )
                         ),
                     ];
-                    setSelectedYear(years[0]);
+                    setSelectedYear(years[0] || ""); // Default to empty string if no valid years
                 }
             } else {
                 setErrorMessage(response.message);
@@ -139,6 +159,123 @@ export default function ChildDetailPage() {
             }
         } catch (error) {
             console.error("Error fetching posts for child:", error);
+        }
+    };
+
+    const isValidDate = (date: unknown): boolean => {
+        return date instanceof Date && !isNaN(date.getTime());
+    };
+
+    const filteredEntries = entries.filter((entry) => {
+        if (!isValidDate(entry.recordedDate)) {
+            console.warn("Invalid recordedDate found:", entry);
+            return false; // Skip invalid entries
+        }
+        return entry.recordedDate.toISOString().startsWith(selectedYear);
+    });
+
+    // Filter standard metrics based on selected age
+    const filteredStandardMetrics = standardMetrics.filter(
+        (metric) => metric.age === Number(selectedStandardAge)
+    );
+
+    const getBmiClass = (bmi: number) => {
+        if (bmi < 18.5) return "bg-blue-500";
+        if (bmi >= 18.5 && bmi <= 24.9) return "bg-green-500";
+        if (bmi >= 25 && bmi <= 29.9) return "bg-yellow-500";
+        return "bg-red-500";
+    };
+
+    const getBmiStatus = (bmi: number) => {
+        if (bmi < 18.5) return "Underweight";
+        if (bmi >= 18.5 && bmi <= 24.9) return "Normal Weight";
+        if (bmi >= 25 && bmi <= 29.9) return "Overweight";
+        return "Obesity";
+    };
+
+    const getLatestEntry = (entries: Metric[]) => {
+        if (!entries || entries.length === 0) return null;
+        return entries.reduce((latest, current) =>
+            new Date(current.recordedDate) > new Date(latest.recordedDate)
+                ? current
+                : latest
+        );
+    };
+
+    //Add Metric
+    const handleAddEntry = async () => {
+        if (!newWeight || !newHeight || !newRecordedDate) {
+            setErrorMessage("Please fill in all fields.");
+            return;
+        }
+
+        const recordedDate = new Date(newRecordedDate);
+        if (isNaN(recordedDate.getTime())) {
+            setErrorMessage("Invalid recorded date.");
+            return;
+        }
+
+        if (childDetail?.dob) {
+            const dobDate = new Date(childDetail.dob);
+            if (isNaN(dobDate.getTime())) {
+                setErrorMessage("Invalid date of birth.");
+                return;
+            }
+            if (recordedDate < dobDate) {
+                setErrorMessage(
+                    "The recorded date cannot be earlier than the child's date of birth."
+                );
+                return;
+            }
+        }
+
+        if (!id || isNaN(Number(id))) {
+            setErrorMessage("Invalid child ID.");
+            return;
+        }
+        const childId = Number(id);
+
+        try {
+            const metricData = {
+                weight: parseFloat(newWeight),
+                height: parseFloat(newHeight),
+                recordedDate: recordedDate.toISOString(),
+                childId: childId,
+            };
+
+            const response = await metricApi.createMetric(metricData);
+            if (response.status === "ok" || response.status === "success") {
+                const newMetric = response.data;
+                newMetric.recordedDate = new Date(newMetric.recordedDate);
+                const updatedEntries = [...entries, newMetric];
+                setEntries(updatedEntries);
+
+                const newYear = newMetric.recordedDate.getFullYear().toString();
+                const availableYears = [
+                    ...new Set(
+                        updatedEntries.map((entry) =>
+                            entry.recordedDate.getFullYear().toString()
+                        )
+                    ),
+                ];
+                if (!availableYears.includes(selectedYear) || !selectedYear) {
+                    setSelectedYear(newYear);
+                }
+
+                setSuccessMessage("Metric added successfully!");
+                setErrorMessage("");
+                setNewWeight("");
+                setNewHeight("");
+                setNewRecordedDate("");
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                setErrorMessage(response.message || "Failed to add metric.");
+                setTimeout(() => setErrorMessage(null), 3000);
+            }
+        } catch (error) {
+            console.error("Error creating metric:", error);
+            setErrorMessage("An error occurred while adding the entry.");
+            setTimeout(() => setErrorMessage(null), 3000);
         }
     };
 
@@ -179,100 +316,6 @@ export default function ChildDetailPage() {
         }
     };
 
-    // Delete Post
-    const handleDeletePost = async (postId: bigint) => {
-        try {
-            const response = await postApi.deletePost(postId);
-            if (response.status === "ok" || response.status === "success") {
-                setPosts(posts.filter((post) => post.id !== postId));
-                setSuccessMessage1("User updated successfully!");
-                setTimeout(() => setSuccessMessage1(null), 3000);
-            } else {
-                setErrorMessage1(response.message);
-                setTimeout(() => setErrorMessage1(null), 3000);
-            }
-        } catch (error) {
-            console.error("Error deleting post:", error);
-        }
-    };
-
-    //Add Metric
-    const handleAddEntry = async () => {
-        if (!newWeight || !newHeight || !newRecordedDate) {
-            setErrorMessage("Please fill in all fields.");
-            return;
-        }
-    
-        const recordedDate = new Date(newRecordedDate);
-        if (isNaN(recordedDate.getTime())) {
-            setErrorMessage("Invalid recorded date.");
-            return;
-        }
-    
-        if (childDetail?.dob) {
-            const dobDate = new Date(childDetail.dob);
-            if (isNaN(dobDate.getTime())) {
-                setErrorMessage("Invalid date of birth.");
-                return;
-            }
-            if (recordedDate < dobDate) {
-                setErrorMessage("The recorded date cannot be earlier than the child's date of birth.");
-                return;
-            }
-        }
-    
-        if (!id || isNaN(Number(id))) {
-            setErrorMessage("Invalid child ID.");
-            return;
-        }
-        const childId = Number(id);
-    
-        try {
-            const metricData = {
-                weight: parseFloat(newWeight),
-                height: parseFloat(newHeight),
-                recordedDate: recordedDate.toISOString(), 
-                childId: childId, 
-            };
-    
-            const response = await metricApi.createMetric(metricData);
-            if (response.status === "ok" || response.status === "success") {
-                const newMetric = response.data; 
-                newMetric.recordedDate = new Date(newMetric.recordedDate); 
-                setEntries([...entries, newMetric]); 
-                setSuccessMessage("Metric added successfully!");
-                setErrorMessage("");
-                setNewWeight("");
-                setNewHeight("");
-                setNewRecordedDate("");
-                setTimeout(() => setSuccessMessage("Successfully to add metric!"), 3000);
-                setTimeout(() => setSuccessMessage(null), 3000);
-            } else {
-                setErrorMessage(response.message || "Failed to add metric.");
-                setTimeout(() => setErrorMessage(null), 3000);
-            }
-        } catch (error) {
-            console.error("Error creating metric:", error);
-            setErrorMessage("An error occurred while adding the entry.");
-        }
-    };
-
-    const filteredEntries = entries.filter((entry) =>
-        entry.recordedDate.toISOString().startsWith(selectedYear)
-    );
-
-    // Filter standard metrics based on selected age
-    const filteredStandardMetrics = standardMetrics.filter(
-        (metric) => metric.age === Number(selectedStandardAge)
-    );
-
-    const getBmiClass = (bmi: number) => {
-        if (bmi < 18.5) return "bg-blue-500";
-        if (bmi >= 18.5 && bmi <= 24.9) return "bg-green-500";
-        if (bmi >= 25 && bmi <= 29.9) return "bg-yellow-500";
-        return "bg-red-500";
-    };
-
     // Create Post
     const handleCreatePost = async () => {
         if (!newPostTitle.trim() || !newPostContent.trim()) {
@@ -310,6 +353,23 @@ export default function ChildDetailPage() {
         }
     };
 
+    // Delete Post
+    const handleDeletePost = async (postId: bigint) => {
+        try {
+            const response = await postApi.deletePost(postId);
+            if (response.status === "ok" || response.status === "success") {
+                setPosts(posts.filter((post) => post.id !== postId));
+                setSuccessMessage1("User updated successfully!");
+                setTimeout(() => setSuccessMessage1(null), 3000);
+            } else {
+                setErrorMessage1(response.message);
+                setTimeout(() => setErrorMessage1(null), 3000);
+            }
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        }
+    };
+
     return (
         <div
             className="flex flex-col min-h-screen text-white"
@@ -324,7 +384,7 @@ export default function ChildDetailPage() {
         >
             <Navbar />
             <main className="flex-1 text-white p-6">
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
+                <div className="mb-8 p-6 bg-gray-800 border-indigo-600 rounded-lg shadow-md ">
                     <h1 className="text-3xl font-bold">
                         {childDetail ? childDetail.name : "Loading..."}
                     </h1>
@@ -388,7 +448,7 @@ export default function ChildDetailPage() {
                 )}
 
                 {/* Child Data Chart */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md relative">
+                <div className="mb-8 p-6 bg-gray-800 border-indigo-600 rounded-lg shadow-md relative">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold">
                             Child Growth Chart
@@ -468,7 +528,7 @@ export default function ChildDetailPage() {
                 </div>
 
                 {/* Standard Data Chart */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md relative">
+                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md relative border-indigo-600">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold">
                             Standard Growth Chart
@@ -525,49 +585,145 @@ export default function ChildDetailPage() {
                     </ResponsiveContainer>
                 </div>
 
+                {/* Child Current Status Section */}
+                <div className="mb-8 p-6 bg-gradient-to-br bg-gray-800 rounded-2xl shadow-xl border border-indigo-600">
+                    <h2 className="flex items-center text-2xl font-bold mb-6 text-indigo-200 tracking-wide">
+                        <FaHeartbeat className="text-white text-3xl mr-3" />
+                        Current Health Status
+                    </h2>
+
+                    {entries.length > 0 ? (
+                        (() => {
+                            const latest = getLatestEntry(entries);
+
+                            return (
+                                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-6">
+                                    <div className="flex-1 bg-indigo-700/30 p-4 rounded-lg shadow-inner">
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-gray-200">
+                                            <div className="flex flex-col items-center">
+                                                <FaCalendarAlt className="mb-1 text-xl text-indigo-300" />
+                                                <span className="text-xs uppercase tracking-wide">
+                                                    Date
+                                                </span>
+                                                <span className="font-semibold">
+                                                    {latest?.recordedDate
+                                                        ? latest.recordedDate.toLocaleDateString()
+                                                        : "N/A"}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <FaWeight className="mb-1 text-xl text-indigo-300" />
+                                                <span className="text-xs uppercase tracking-wide">
+                                                    Weight
+                                                </span>
+                                                <span className="font-semibold">
+                                                    {latest?.weight
+                                                        ? `${latest.weight} kg`
+                                                        : "N/A"}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <FaRulerVertical className="mb-1 text-xl text-indigo-300" />
+                                                <span className="text-xs uppercase tracking-wide">
+                                                    Height
+                                                </span>
+                                                <span className="font-semibold">
+                                                    {latest?.height
+                                                        ? `${latest.height} cm`
+                                                        : "N/A"}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col items-center">
+                                                <FaChartLine className="mb-1 text-xl text-indigo-300" />
+                                                <span className="text-xs uppercase tracking-wide">
+                                                    BMI
+                                                </span>
+                                                <span className="font-semibold">
+                                                    {latest?.bmi ?? "N/A"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-shrink-0">
+                                        <span
+                                            className={`
+              inline-block px-6 py-3 rounded-full text-white font-bold text-lg shadow-lg
+              transform transition-transform duration-300 hover:scale-105
+              ${getBmiClass(
+                  latest && typeof latest.bmi === "number" ? latest.bmi : 0
+              )}
+            `}
+                                        >
+                                            {latest != null &&
+                                            latest.bmi != null
+                                                ? getBmiStatus(latest.bmi)
+                                                : "N/A"}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })()
+                    ) : (
+                        <p className="text-gray-400 italic text-center py-4">
+                            No metrics available yet. Add one to see the current
+                            status!
+                        </p>
+                    )}
+                </div>
+
                 {/* Metrics Table */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md overflow-x-auto">
+                <div className="mb-8 p-6 bg-gray-800 border-indigo-600 rounded-lg shadow-md overflow-x-auto">
                     <h2 className="text-xl font-semibold mb-4">
                         Metrics History
                     </h2>
-                    <table className="w-full text-left border border-gray-700">
-                        <thead>
-                            <tr className="bg-gray-900">
-                                <th className="p-2">Date</th>
-                                <th className="p-2">Weight (kg)</th>
-                                <th className="p-2">Height (cm)</th>
-                                <th className="p-2">BMI</th>
-                                <th className="p-2">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredEntries.map((entry, index) => (
-                                <tr
-                                    key={index}
-                                    className={`border-t border-gray-700 ${getBmiClass(
-                                        entry.bmi
-                                    )}`}
-                                >
-                                    <td className="p-2">
-                                        {entry.recordedDate.toLocaleDateString()}
-                                    </td>
-                                    <td className="p-2">{entry.weight}</td>
-                                    <td className="p-2">{entry.height}</td>
-                                    <td className="p-2">{entry.bmi}</td>
-                                    <td className="p-2">
-                                        <button
-                                            onClick={() =>
-                                                openDeleteModal(entry)
-                                            }
-                                            className="text-red-500 hover:text-red-700 transition"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </td>
+                    {isRoleLoading ? (
+                        <p>Loading metrics...</p>
+                    ) : (
+                        <table className="w-full text-left border border-gray-700">
+                            <thead>
+                                <tr className="bg-gray-900">
+                                    <th className="p-2">Date</th>
+                                    <th className="p-2">Weight (kg)</th>
+                                    <th className="p-2">Height (cm)</th>
+                                    <th className="p-2">BMI</th>
+                                    <th className="p-2">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredEntries.map((entry, index) => (
+                                    <tr
+                                        key={index}
+                                        className={`border-t border-gray-700 ${getBmiClass(
+                                            entry.bmi
+                                        )}`}
+                                    >
+                                        <td className="p-2">
+                                            {entry.recordedDate.toLocaleDateString()}
+                                        </td>
+                                        <td className="p-2">{entry.weight}</td>
+                                        <td className="p-2">{entry.height}</td>
+                                        <td className="p-2">{entry.bmi}</td>
+                                        <td className="p-2">
+                                            {userRole !== "DOCTOR" &&
+                                                userRole !== "ADMIN" && (
+                                                    <button
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                entry
+                                                            )
+                                                        }
+                                                        className="text-red-500 hover:text-red-700 transition"
+                                                    >
+                                                        <FaTrash />
+                                                    </button>
+                                                )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                     <div className="mt-4">
                         <p className="text-lg font-semibold">
                             <span className="bg-blue-500 p-1 rounded mr-2">
@@ -587,7 +743,7 @@ export default function ChildDetailPage() {
                 </div>
 
                 {/* Posts Section */}
-                <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-md">
+                <div className="mb-8 p-6 bg-gray-800 border-indigo-600 rounded-lg shadow-md">
                     <h2 className="text-2xl font-bold mb-6 text-blue-400">
                         Doctor-Parent Feed
                     </h2>

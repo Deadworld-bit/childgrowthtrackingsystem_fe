@@ -123,7 +123,7 @@ export default function Navbar() {
                       Log In
                     </Button>
                   </Link>
-                  <Link href="/SignUp">
+                  <Link href="/SIgnUp">
                     <Button variant="primary" className="hidden md:inline-flex">
                       Sign Up
                     </Button>

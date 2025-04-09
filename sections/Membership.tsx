@@ -7,17 +7,16 @@ import Button from "@/components/Button";
 import Popup from "@/components/popup";
 import userApi from "@/app/api/user";
 import membershipPlanApi from "@/app/api/membership";
-import { MembershipPlan } from "@/app/api/membership"; // Import the interface
+import { MembershipPlan } from "@/app/api/membership";
+import PaymentModal from "@/components/payment"; // Import PaymentModal
 
 const Membership: React.FC = () => {
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>(
-        []
-    );
+    const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
     const [message, setMessage] = useState<string>("");
-    const [messageType, setMessageType] = useState<"error" | "success">(
-        "success"
-    );
+    const [messageType, setMessageType] = useState<"error" | "success">("success");
+    const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     // Fetch user's role from cookie
     useEffect(() => {
@@ -28,16 +27,10 @@ const Membership: React.FC = () => {
                     const parsedUser = JSON.parse(userCookie);
                     const userId = BigInt(parsedUser.id);
                     const response = await userApi.getUserById(userId);
-                    if (
-                        response.status === "ok" ||
-                        response.status === "success"
-                    ) {
+                    if (response.status === "ok" || response.status === "success") {
                         setUserRole(response.data.role);
                     } else {
-                        console.error(
-                            "Error fetching user role:",
-                            response.message
-                        );
+                        console.error("Error fetching user role:", response.message);
                     }
                 } catch (err) {
                     console.error("Error fetching user role from API:", err);
@@ -51,8 +44,7 @@ const Membership: React.FC = () => {
     useEffect(() => {
         const fetchMembershipPlans = async () => {
             try {
-                const response =
-                    await membershipPlanApi.getActiveMembershipPlans();
+                const response = await membershipPlanApi.getActiveMembershipPlans();
                 if (response.status === "ok" || response.status === "success") {
                     setMembershipPlans(response.data);
                 } else {
@@ -73,6 +65,17 @@ const Membership: React.FC = () => {
             return () => clearTimeout(timer);
         }
     }, [message]);
+
+    const handleOpenPaymentModal = (plan: MembershipPlan) => {
+        console.log("Button clicked for plan:", plan);
+        setSelectedPlan(plan);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleClosePaymentModal = () => {
+        setIsPaymentModalOpen(false);
+        setSelectedPlan(null);
+    };
 
     return (
         <section className="relative py-24 text-white bg-gradient-to-b from-gray-800 via-gray-700 to-neutral-800 overflow-hidden">
@@ -103,11 +106,9 @@ const Membership: React.FC = () => {
                                 <h2 className="text-4xl font-bold text-lime-400">
                                     {plan.annualPrice === 0
                                         ? "Free"
-                                        : `${plan.annualPrice.toLocaleString(
-                                              "vi-VN"
-                                          )}₫`}
+                                        : `${plan.annualPrice.toLocaleString("vi-VN")}₫`}
                                     <span className="text-lg text-gray-500">
-                                        /{plan.duration ===0 ? "unlimited" : plan.duration} day
+                                        /{plan.duration === 0 ? "unlimited" : plan.duration} day
                                     </span>
                                 </h2>
                                 <p className="text-white font-semibold mt-4 text-2xl">
@@ -121,29 +122,29 @@ const Membership: React.FC = () => {
                                     variant="primary"
                                     className="mt-6 px-6 py-3 bg-lime-500 text-black font-semibold rounded-lg hover:bg-lime-600 transition-colors duration-200"
                                     size="sm"
+                                    onClick={() => handleOpenPaymentModal(plan)}
                                 >
-                                    Start Free Trial
+                                    Get Started
                                 </Button>
                                 <ul className="mt-6 text-white space-y-3 text-left">
-                                    {plan.features
-                                        .split(",")
-                                        .map((feature, i) => (
-                                            <li
-                                                key={i}
-                                                className="flex items-center gap-2 text-sm leading-tight"
-                                            >
-                                                <span className="text-lime-400">
-                                                    ✔
-                                                </span>
-                                                {feature.trim()}
-                                            </li>
-                                        ))}
+                                    {plan.features.split(",").map((feature, i) => (
+                                        <li
+                                            key={i}
+                                            className="flex items-center gap-2 text-sm leading-tight"
+                                        >
+                                            <span className="text-lime-400">✔</span>
+                                            {feature.trim()}
+                                        </li>
+                                    ))}
                                 </ul>
                             </div>
                         );
                     })}
                 </div>
             </div>
+            {isPaymentModalOpen && selectedPlan && (
+                <PaymentModal plan={selectedPlan} onClose={handleClosePaymentModal} />
+            )}
         </section>
     );
 };
