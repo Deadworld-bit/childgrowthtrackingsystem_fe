@@ -32,7 +32,6 @@ export default function EditMembershipPlanModal({
     duration?: string;
   }>({});
 
-  // Sync features
   useEffect(() => {
     if (plan) {
       setLocalFeatures(
@@ -44,7 +43,6 @@ export default function EditMembershipPlanModal({
     }
   }, [plan?.features]);
 
-  // Push features back up
   useEffect(() => {
     const fakeEvent = {
       target: { name: "features", value: localFeatures.join(",") },
@@ -59,31 +57,50 @@ export default function EditMembershipPlanModal({
       setFeatureInput("");
     }
   };
+
   const removeFeature = (idx: number) => {
     setLocalFeatures((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  if (!isOpen || !plan) return null;
+  const validateField = (name: string, value: any) => {
+    let error: string | undefined;
+
+    if (name === "name" && !value.trim()) {
+      error = "Name is required.";
+    } else if (name === "maxChildren" || name === "duration") {
+      const numValue = Number(value);
+      if (isNaN(numValue) || numValue < 0) {
+        error = "Must be 0 or greater.";
+      } else if (!Number.isInteger(numValue)) {
+        error = "Must be a whole number.";
+      }
+    } else if (name === "annualPrice") {
+      const numValue = Number(value);
+      if (isNaN(numValue) || numValue < 0) {
+        error = "Must be 0 or greater.";
+      }
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error;
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    handleChange(e);
+    validateField(e.target.name, e.target.value);
+  };
 
   const handleSave = () => {
     const errs: typeof errors = {};
 
-    // Name must not be empty
-    if (!plan.name.trim()) {
-      errs.name = "Name is required.";
-    }
+    errs.name = validateField("name", plan?.name);
+    errs.maxChildren = validateField("maxChildren", plan?.maxChildren);
+    errs.annualPrice = validateField("annualPrice", plan?.annualPrice);
+    errs.duration = validateField("duration", plan?.duration);
 
-    if (plan.maxChildren < 0) errs.maxChildren = "Must be 0 or greater.";
-    else if (!Number.isInteger(plan.maxChildren))
-      errs.maxChildren = "Must be a whole number.";
-
-    if (plan.annualPrice < 0) errs.annualPrice = "Must be 0 or greater.";
-
-    if (plan.duration < 0) errs.duration = "Must be 0 or greater.";
-    else if (!Number.isInteger(plan.duration))
-      errs.duration = "Must be a whole number.";
-
-    if (Object.keys(errs).length) {
+    if (Object.values(errs).some((err) => err)) {
       setErrors(errs);
       return;
     }
@@ -91,6 +108,8 @@ export default function EditMembershipPlanModal({
     saveChanges();
     setErrors({});
   };
+
+  if (!isOpen || !plan) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
@@ -112,10 +131,7 @@ export default function EditMembershipPlanModal({
             type="text"
             name="name"
             value={plan.name}
-            onChange={(e) => {
-              handleChange(e);
-              setErrors((prev) => ({ ...prev, name: undefined }));
-            }}
+            onChange={handleInputChange}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
           {errors.name && (
@@ -129,7 +145,7 @@ export default function EditMembershipPlanModal({
           <textarea
             name="description"
             value={plan.description}
-            onChange={handleChange}
+            onChange={handleInputChange}
             rows={3}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
@@ -149,7 +165,7 @@ export default function EditMembershipPlanModal({
                   onClick={() => removeFeature(i)}
                   className="ml-1 text-white hover:text-gray-200"
                 >
-                  &times;
+                  ×
                 </button>
               </li>
             ))}
@@ -171,18 +187,13 @@ export default function EditMembershipPlanModal({
             type="number"
             name="maxChildren"
             value={plan.maxChildren}
-            onChange={(e) => {
-              handleChange(e);
-              setErrors((prev) => ({ ...prev, maxChildren: undefined }));
-            }}
+            onChange={handleInputChange}
             min={0}
             step={1}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
           {errors.maxChildren && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.maxChildren}
-            </p>
+            <p className="text-red-400 text-sm mt-1">{errors.maxChildren}</p>
           )}
         </div>
 
@@ -193,17 +204,12 @@ export default function EditMembershipPlanModal({
             type="number"
             name="annualPrice"
             value={plan.annualPrice}
-            onChange={(e) => {
-              handleChange(e);
-              setErrors((prev) => ({ ...prev, annualPrice: undefined }));
-            }}
+            onChange={handleInputChange}
             min={0}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"
           />
           {errors.annualPrice && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.annualPrice}
-            </p>
+            <p className="text-red-400 text-sm mt-1">{errors.annualPrice}</p>
           )}
         </div>
 
@@ -214,10 +220,7 @@ export default function EditMembershipPlanModal({
             type="number"
             name="duration"
             value={plan.duration}
-            onChange={(e) => {
-              handleChange(e);
-              setErrors((prev) => ({ ...prev, duration: undefined }));
-            }}
+            onChange={handleInputChange}
             min={0}
             step={1}
             className="w-full p-2 bg-gray-700 border border-gray-600 rounded"

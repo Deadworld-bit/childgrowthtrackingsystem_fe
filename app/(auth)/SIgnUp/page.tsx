@@ -26,7 +26,6 @@ function SignUpContent() {
     setEmail(preFilledEmail);
   }, [searchParams]);
 
-  // Function to generate a secure random password
   const generatePassword = () => {
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
@@ -39,7 +38,6 @@ function SignUpContent() {
     setSuggestedPassword(generatedPassword);
   };
 
-  // Function to check password security
   const isPasswordSecure = (password: string) => {
     const minLength = 10;
     const hasUppercase = /[A-Z]/.test(password);
@@ -56,10 +54,27 @@ function SignUpContent() {
     );
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only trim leading and trailing spaces, allowing spaces between words
+    const cleanedName = e.target.value.trim();
+    setName(cleanedName);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    // Validate name
+    const trimmedName = name.trim(); // Ensure no leading/trailing spaces in validation
+    if (!trimmedName) {
+      setError("Name is required.");
+      return;
+    }
+    if (trimmedName.length < 3) {
+      setError("Name must be at least 3 characters long.");
+      return;
+    }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -82,10 +97,9 @@ function SignUpContent() {
       return;
     }
 
-    // Call the Create User API with role set to MEMBER by default
     try {
       const response = await userApi.createUser({
-        username: name,
+        username: trimmedName, // Use trimmed name for submission
         password,
         email,
         role: "MEMBER",
@@ -102,7 +116,6 @@ function SignUpContent() {
       setSuccess("Account created successfully!");
       console.log("Created User:", response);
 
-      // Redirect to the Sign In page after a short delay
       setTimeout(() => {
         router.push("/SignIn");
       }, 1500);
@@ -125,10 +138,8 @@ function SignUpContent() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
-      {/* Left Side: Sign Up Form */}
       <div className="w-1/2 flex items-center justify-center z-10">
         <div
           className="max-w-lg w-full p-8 rounded-xl shadow-lg"
@@ -137,7 +148,6 @@ function SignUpContent() {
             background: "rgba(0, 0, 0, 0.5)",
           }}
         >
-          {/* Section Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
               Create an Account
@@ -147,7 +157,6 @@ function SignUpContent() {
             </p>
           </div>
 
-          {/* Display Error or Success Message */}
           {error && (
             <p className="text-red-500 text-center mb-4">{error}</p>
           )}
@@ -157,10 +166,8 @@ function SignUpContent() {
             </p>
           )}
 
-          {/* Sign Up Form */}
           <form onSubmit={handleSubmit}>
             <div className="space-y-5">
-              {/* Name Field */}
               <div>
                 <label
                   className="block text-sm font-medium text-gray-300"
@@ -174,12 +181,11 @@ function SignUpContent() {
                   className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Your full name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)} // Changed to direct setName
                   required
                 />
               </div>
 
-              {/* Email Field */}
               <div>
                 <label
                   className="block text-sm font-medium text-gray-300"
@@ -198,7 +204,6 @@ function SignUpContent() {
                 />
               </div>
 
-              {/* Password Field */}
               <div>
                 <label
                   className="block text-sm font-medium text-gray-300"
@@ -224,7 +229,6 @@ function SignUpContent() {
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
-                {/* Suggested Password */}
                 {suggestedPassword && (
                   <p className="text-sm text-gray-400 mt-2">
                     Suggested Password:{" "}
@@ -245,7 +249,6 @@ function SignUpContent() {
                 </button>
               </div>
 
-              {/* Confirm Password Field */}
               <div>
                 <label
                   className="block text-sm font-medium text-gray-300"
@@ -274,7 +277,6 @@ function SignUpContent() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="mt-6">
               <button className="w-full py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:opacity-90 transition-transform transform hover:scale-105">
                 Register
@@ -282,7 +284,6 @@ function SignUpContent() {
             </div>
           </form>
 
-          {/* Bottom Link */}
           <div className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{" "}
             <Link
@@ -295,13 +296,12 @@ function SignUpContent() {
         </div>
       </div>
 
-      {/* Right Side: Welcome Message */}
       <div className="w-1/2 flex flex-col items-center justify-center text-center text-white p-10 z-10">
         <h2 className="text-5xl font-bold mb-4">
           Welcome to Our Platform
         </h2>
         <p className="text-lg text-gray-300">
-          Join us to track your child&apos;s growth and connect with healthcare professionals.
+          Join us to track your child's growth and connect with healthcare professionals.
         </p>
       </div>
     </section>

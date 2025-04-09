@@ -47,7 +47,12 @@ export default function CreateMembershipPlanModal({
         const { name, value } = e.target;
         setForm((prev) => ({
             ...prev,
-            [name]: name === "name" ? value.toUpperCase() : Number(value),
+            [name]:
+                name === "name"
+                    ? value.toUpperCase()
+                    : name === "description" || name === "features"
+                    ? value 
+                    : Number(value), 
         }));
         setErrors((errs) => ({ ...errs, [name]: undefined }));
     };
@@ -159,7 +164,7 @@ export default function CreateMembershipPlanModal({
                                     onClick={() => removeFeature(i)}
                                     className="ml-1 text-white hover:text-gray-200"
                                 >
-                                    &times;
+                                    ×
                                 </button>
                             </li>
                         ))}
