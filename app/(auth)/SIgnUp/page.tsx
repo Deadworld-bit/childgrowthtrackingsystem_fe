@@ -55,7 +55,7 @@ function SignUpContent() {
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value); // Allow all input, validate on submit
+    setName(e.target.value); 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,7 +63,7 @@ function SignUpContent() {
     setError(null);
     setSuccess(null);
 
-    const trimmedName = name.trim(); // Ensure no leading/trailing spaces in validation
+    const trimmedName = name.trim(); 
     if (!trimmedName) {
       setError("Name is required.");
       return;
@@ -99,13 +99,13 @@ function SignUpContent() {
 
     try {
       const response = await userApi.createUser({
-        username: trimmedName, // Use trimmed name for submission
+        username: trimmedName, 
         password,
         email,
         role: "MEMBER",
       });
 
-      if (response.status === "false") {
+      if (response.status === "false" || response.status === "fail") {
         setError(
           response.message || "Failed to create account. Please try again."
         );
