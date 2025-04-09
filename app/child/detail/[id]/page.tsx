@@ -103,31 +103,30 @@ export default function ChildDetailPage() {
 
     const fetchChildMetrics = async (childId: string) => {
         try {
-            const response = await metricApi.getMetricsByChildId(
-                BigInt(childId)
-            );
+            const response = await metricApi.getMetricsByChildId(BigInt(childId));
             if (response.status === "ok") {
                 const parsedMetrics = response.data.map((metric) => {
                     const parsedDate = new Date(metric.recordedDate);
                     if (!isValidDate(parsedDate)) {
-                        console.error(
-                            "Invalid date from API:",
-                            metric.recordedDate
-                        );
+                        console.error("Invalid date from API:", metric.recordedDate);
                     }
                     return {
                         ...metric,
                         recordedDate: parsedDate,
                     };
                 });
+    
+                // Sort parsedMetrics by recordedDate in ascending order
+                parsedMetrics.sort((a, b) => {
+                    return a.recordedDate.getTime() - b.recordedDate.getTime();
+                });
+    
                 setEntries(parsedMetrics);
                 if (parsedMetrics.length > 0) {
                     const years = [
                         ...new Set(
                             parsedMetrics
-                                .filter((entry) =>
-                                    isValidDate(entry.recordedDate)
-                                )
+                                .filter((entry) => isValidDate(entry.recordedDate))
                                 .map((entry) =>
                                     entry.recordedDate.getFullYear().toString()
                                 )
