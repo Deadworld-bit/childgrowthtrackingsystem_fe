@@ -116,7 +116,6 @@ export default function ChildDetailPage() {
                     };
                 });
     
-                // Sort parsedMetrics by recordedDate in ascending order
                 parsedMetrics.sort((a, b) => {
                     return a.recordedDate.getTime() - b.recordedDate.getTime();
                 });
